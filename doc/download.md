@@ -12,23 +12,20 @@ ReverseHttp website, <http://www.reversehttp.net/>.
 
 To download the code, you can either
 
- - use [Mercurial](http://www.selenic.com/mercurial/) to check out the
-   [source repository](http://hg.opensource.lshift.net/reversehttp):  
-   `hg clone http://hg.opensource.lshift.net/reversehttp`
+ - use [Git](http://git-scm.com/) to check out the source repository:  
+   `git clone git://github.com/tonyg/reversehttp.git`
 
- - [browse the code online](http://hg.opensource.lshift.net/reversehttp/file/default)
+ - [browse the code online](http://github.com/tonyg/reversehttp/tree/master)
 
- - or download the [most recent
-   snapshot](http://hg.opensource.lshift.net/reversehttp/archive/default.zip)
-   (automatically generated from the Mercurial web interface upon
-   request).
+ - or download the [most recent snapshot](http://github.com/tonyg/reversehttp/zipball/master)
+   (automatically generated from the Github web interface upon request).
 
 ## What does it do?
 
 The ReverseHttp software bundle contains
 
  - A server written in [Erlang](http://www.erlang.org/) ([browse
-   source](http://hg.opensource.lshift.net/reversehttp/file/default/src/reflect_request_queue.erl))
+   source](http://github.com/tonyg/reversehttp/blob/master/src/reflect_request_queue.erl))
    that implements both
 
    - The [draft ReverseHttp specification][revspec], which lets
@@ -41,13 +38,13 @@ The ReverseHttp software bundle contains
  - Client libraries for
 
    - Javascript in the browser
-     ([browse source](http://hg.opensource.lshift.net/reversehttp/file/default/priv/www/httpd.js))
+     ([browse source](http://github.com/tonyg/reversehttp/blob/master/priv/www/httpd.js))
 
    - Python
-     ([browse source](http://hg.opensource.lshift.net/reversehttp/file/default/priv/python/reversehttp.py))
+     ([browse source](http://github.com/tonyg/reversehttp/blob/master/priv/python/reversehttp.py))
 
    - Java
-     ([browse source](http://hg.opensource.lshift.net/reversehttp/file/default/priv/java/net/reversehttp))
+     ([browse source](http://github.com/tonyg/reversehttp/tree/master/priv/java/net/reversehttp))
 
 ## How is it licensed?
 
