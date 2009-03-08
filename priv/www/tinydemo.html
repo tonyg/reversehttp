@@ -1,0 +1,36 @@
+<html>
+  <head>
+    <title>The Tiny Reverse HTTP Demo</title>
+    <link type="text/css" rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="prototype-1.6.0.2.js"></script>
+    <script type="text/javascript" src="httpd.js"></script>
+  </head>
+  <body>
+    <div id="outerContainer">
+      <div id="innerContainer">
+	<h1>The Tiny Reverse HTTP Demo</h1>
+	<p>
+	  This page contains a running web server, written in
+	  Javascript. To try it out, open a new browser window, and
+	  put the URL <span id="serviceLocation"></span> into the new
+	  window's location bar.
+	</p>
+	<script type="text/javascript">
+	  new HttpServer("tinydemo",
+	                 function (req) {
+			   var c = Number($("counter").innerHTML) + 1;
+			   req.respond(200, "OK", {}, "Hello, world! This is response #"+ c);
+			   $("counter").innerHTML = c;
+			 },
+			 {onLocationChanged: function (location) {
+			      $("serviceLocation").innerHTML = location;
+			  }});
+	</script>
+	<p>
+	  The webserver has served <span id="counter">0</span>
+	  documents so far.
+	</p>
+      </div>
+    </div>
+  </body>
+</html>

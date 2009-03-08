@@ -1,0 +1,82 @@
+# Downloading ReverseHttp
+
+<a href="http://www.lshift.net/"><img border="0" width="680" src="http://www.lshift.net/images/banner.jpg" alt="LShift Logo"></a>
+
+Development of ReverseHttp is supported by
+[LShift](http://www.lshift.net/). LShift also hosts the main
+ReverseHttp website, <http://www.reversehttp.net/>.
+
+----
+
+## How can I get a copy?
+
+To download the code, you can either
+
+ - use [Mercurial](http://www.selenic.com/mercurial/) to check out the
+   [source repository](http://hg.opensource.lshift.net/reversehttp):  
+   `hg clone http://hg.opensource.lshift.net/reversehttp`
+
+ - [browse the code online](http://hg.opensource.lshift.net/reversehttp/file/default)
+
+ - or download the [most recent
+   snapshot](http://hg.opensource.lshift.net/reversehttp/archive/default.zip)
+   (automatically generated from the Mercurial web interface upon
+   request).
+
+## What does it do?
+
+The ReverseHttp software bundle contains
+
+ - A server written in [Erlang](http://www.erlang.org/) ([browse
+   source](http://hg.opensource.lshift.net/reversehttp/file/default/src/reflect_request_queue.erl))
+   that implements both
+
+   - The [draft ReverseHttp specification][revspec], which lets
+     arbitrary HTTP clients receive and respond to HTTP requests, and
+
+   - The [draft RelayHttp specification][relayspec], which lets
+     Javascript programs issue outbound HTTP requests without running
+     afoul of the usual [cross-site scripting][XSS] attacks.
+
+ - Client libraries for
+
+   - Javascript in the browser
+     ([browse source](http://hg.opensource.lshift.net/reversehttp/file/default/priv/www/httpd.js))
+
+   - Python
+     ([browse source](http://hg.opensource.lshift.net/reversehttp/file/default/priv/python/reversehttp.py))
+
+   - Java
+     ([browse source](http://hg.opensource.lshift.net/reversehttp/file/default/priv/java/net/reversehttp))
+
+## How is it licensed?
+
+It is [open-source](http://www.opensource.org/) code,
+licensed under the very liberal [MIT license](http://www.opensource.org/licenses/mit-license.php):
+
+    Copyright (c) 2008, 2009 Tony Garnock-Jones <tonyg@lshift.net>
+    Copyright (c) 2008, 2009 LShift Ltd. <query@lshift.net>
+
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the "Software"), to deal in the Software without
+    restriction, including without limitation the rights to use, copy,
+    modify, merge, publish, distribute, sublicense, and/or sell copies
+    of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+    DEALINGS IN THE SOFTWARE.
+
+  [revspec]: reverse-http-spec.html
+  [relayspec]: relay-http-spec.html
+  [XSS]: http://en.wikipedia.org/wiki/Cross-site_scripting

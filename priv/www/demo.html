@@ -1,0 +1,49 @@
+<html>
+  <head>
+    <title>Reverse HTTP Demo</title>
+    <link type="text/css" rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="prototype-1.6.0.2.js"></script>
+    <script type="text/javascript" src="httpd.js"></script>
+    <script type="text/javascript" src="demolog.js"></script>
+    <script type="text/javascript" src="demo.js"></script>
+  </head>
+  <body>
+    <div id="outerContainer">
+      <div id="innerContainer">
+	<h1>Reverse HTTP Demo</h1>
+	<p>
+	  This page contains a running web server, written in
+	  Javascript. The web server responds to requests to <b><a
+	  id="demoLabel_link" target="_blank"
+	  href="http://???/">http://???/</a></b> by sending the
+	  contents of the text box below.
+	</p>
+	<p>
+	  To try it out, click on the link above. It should open a new
+	  window or tab displaying the rendered contents of the text
+	  box below. Try editing the text box's contents and
+	  refreshing the other window!
+	</p>
+	<textarea id="replyText" cols="80" rows="12">
+&lt;html&gt;
+  &lt;head&gt;&lt;title&gt;Test reply!&lt;/title&gt;&lt;/head&gt;
+  &lt;body&gt;
+    &lt;h1&gt;Test reply!&lt;/h1&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</textarea>
+	<p>
+	  To set the virtual-host this web server serves content for,
+	  edit this input field:
+	  <input type="text" id="demoLabel" name="demoLabel"
+		 onkeypress="demoLabel_keypress()"
+		 onchange="demoLabel_changed()"
+		 value="demo" />
+	  Note how the link in the top paragraph changes.
+	</p>
+	<pre id="logOutput"></pre>
+	<script type="text/javascript">demo_main();</script>
+      </div>
+    </div>
+  </body>
+</html>

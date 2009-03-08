@@ -1,0 +1,31 @@
+<html>
+  <head>
+    <title>Publication Demo</title>
+    <link type="text/css" rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="prototype-1.6.0.2.js"></script>
+    <script type="text/javascript" src="httpd.js"></script>
+    <script type="text/javascript" src="messaging.js"></script>
+    <script type="text/javascript" src="demolog.js"></script>
+    <script type="text/javascript" src="pub.js"></script>
+  </head>
+  <body>
+    <div id="outerContainer">
+      <div id="innerContainer">
+	<h1>Publication Demo</h1>
+	<p>
+	  Target name:
+	  <input size="40" type="text" id="targetName" value="relay@relay.???" />
+	</p>
+	<p>
+	  Message:
+	</p>
+	<textarea id="messageBody"></textarea>
+	<p>
+	  <button onclick="sendMessage()">Send</button>
+	</p>
+	<pre id="logOutput"></pre>
+	<script type="text/javascript">pub_main();</script>
+      </div>
+    </div>
+  </body>
+</html>

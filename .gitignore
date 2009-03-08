@@ -1,0 +1,9 @@
+scratch
+doc/edoc/*.html
+doc/html/*.html
+ebin/*.beam
+ebin/reversehttp.app
+*.pyc
+.classpath
+.project
+*.class

@@ -1,0 +1,37 @@
+Authentication
+ - 401, 403
+
+Presence!
+
+Multimedia messaging
+ - enclosures
+ - linking, transfer; in band, out of band
+ - metadata
+
+When considering policies for unsubscription, perhaps include a
+generation-number with a subscription? That way, flapping can be
+avoided by auto-unsubscribing only a given generation...
+
+Support non-vhost-based claims
+
+Investigate the use of global:register_name to replace the ets table
+ - works, but slow; mnesia better?
+
+Orbited?
+
+Fix the request-timeouts in case where a poller is working its way
+through a queue. The timeout then should be closer to ANSWER_TIMEOUT
+than REQUEST_TIMEOUT. Only in the case where no requests are
+in-progress and there are no pollers queued up should requests time
+out with REQUEST_TIMEOUT.
+
+Make timeout-downstream and timeout-poller use different response
+codes: currently they're both 504.
+
+Make the response-checking happen in the right place: on the replying
+side, not the requesting side. Should eliminate the 502 for a
+requestor.
+
+Implement deregistration.
+
+Implement some kind of security (authentication/authorisation) hook.
