@@ -23,7 +23,8 @@ handle(Req, ExceptionHosts) ->
     case Req:get_header_value(host) of
         undefined ->
             error(Req, 400, "Missing Host HTTP header");
-        Host ->
+        MixedCaseHost ->
+            Host = string:to_lower(MixedCaseHost),
             case lists:keysearch(Host, 1, ExceptionHosts) of
                 {value, {_, AccessPoints}} ->
                     %% The request was for one of our configured
@@ -115,7 +116,8 @@ handle_reverse_http(Req, 'POST', AP, [], UrlQueryFields) ->
                       end,
     QueryFields = BodyQueryFields ++ UrlQueryFields,
     case lists:keysearch("name", 1, QueryFields) of
-        {value, {_, HostLabel}} ->
+        {value, {_, MixedCaseHostLabel}} ->
+            HostLabel = string:to_lower(MixedCaseHostLabel),
             Token = case lists:keysearch("token", 1, QueryFields) of
                         {value, {_, T}} -> T;
                         false -> random_id(HostLabel)
@@ -210,7 +212,7 @@ handle_meta(Req, AP, PathComponents, QueryFields) ->
 %%--------------------------------------------------------------------
 
 expand_host_label(Req, HostLabel) ->
-    HostLabel ++ "." ++ Req:get_header_value(host).
+    HostLabel ++ "." ++ string:to_lower(Req:get_header_value(host)).
 
 format_ext_vhost_url(Req, HostLabel) ->
     "http://" ++ expand_host_label(Req, HostLabel) ++ "/".
