@@ -201,7 +201,7 @@ function HttpServer(label, callback, options) {
     setTimeout(function () {
 		   $elf.options.debug("Declaring label " + label);
 		   $elf.serve();
-	       }, 1);
+	       }, 250);
 }
 
 HttpServer.prototype.stop = function () {
