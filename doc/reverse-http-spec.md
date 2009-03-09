@@ -353,7 +353,7 @@ should be formatted as `A.B.C.D:PORT`; for example, if the requestor
 had IP address 10.1.2.3 and remote TCP port number 45678, the
 `Requesting-Client` header would contain the string `10.1.2.3:45678`.
 
-### Load balancing
+### Work distribution
 
 If an application is waiting on more than a single Request URL for
 incoming requests, the Gateway Service SHOULD send requests out to
