@@ -105,16 +105,12 @@ single request:
             |<---- 404 ------------|----- 202 ----------->|
             |                      |                      |
 
-### Application
-
-An Application is a program that wishes to provide HTTP service to
+An *Application* is a program that wishes to provide HTTP service to
 third parties, and that registers with a Gateway Service in order to
 do so.
 
-### Gateway Service and Gateway Server
-
-A Gateway Server is an ordinary HTTP server that provides Gateway
-Service to Applications. A Gateway Service
+A *Gateway Server* is an ordinary HTTP server that provides Gateway
+Service to Applications. A *Gateway Service*
 
  - responds to Application requests for claiming or relinquishing
    pieces of the URL-space under the control of the Gateway Server,
@@ -124,49 +120,40 @@ Service to Applications. A Gateway Service
    corresponding Applications, and relays Application responses to
    such requests on to the original requestors.
 
-### Gateway Service URL
+The *Gateway Service URL* is used by Applications to claim and
+configure pieces of URL-space under the control of the Gateway Server.
 
-The Gateway Service URL is used by Applications to claim and configure
-pieces of URL-space under the control of the Gateway Server.
-
-### Application Name
-
-The Application Name is the identifier that Applications use when
+The *Application Name* is the identifier that Applications use when
 claiming URL-space from a Gateway Service. Application Names are
 embedded into the Public Application URL given to the Application on
-registration.
-
-Application Names must be valid DNS labels, as specified by [RFC 1034][].
-
-### Public and Private Application URLs
+registration.  Application Names must be valid DNS labels, as
+specified by [RFC 1034][].
 
 When an Application claims a portion of URL-space from a Gateway
 Service, the service sends back three URLs:
 
- - One, the Public Application URL, is a URL that lies within the
+ - One, the *Public Application URL*, is a URL that lies within the
    portion of URL-space under control of the Gateway Server that the
    Application can give out to third parties.
 
- - One, the Private Application URL, is the URL that the Application
+ - One, the *Private Application URL*, is the URL that the Application
    uses to control its registration with the Gateway Service.
 
- - The final URL is the Request URL that the Application should use to
-   receive incoming requests. When HTTP requests arrive for the Public
-   Application URL, they are placed in a queue, and sent on to the
-   Application for processing when the Application accesses a Request
-   URL.
+ - The final URL is the *Request URL* that the Application should use
+   to receive incoming requests. When HTTP requests arrive for the
+   Public Application URL, they are placed in a queue, and sent on to
+   the Application for processing when the Application accesses a
+   Request URL.
 
 Private Application URLs are for controlling active registrations with
 the Gateway Service, and SHOULD be unguessable (for instance, by
-incorporating a GUID or other nonce value) and SHOULD NOT be visible
+incorporating a UUID or other nonce value) and SHOULD NOT be visible
 in any kind of public index. Private Application URLs are effectively
 capabilities granting full access to an application's registration
 with the Gateway Service.
 
 Public Application URLs are for wide distribution and use, and so MAY
 be guessable or placed in a public index.
-
-### Request URLs
 
 HTTP requests relayed to Applications are named by unique Request
 URLs. When an Application has finished processing a request, it
@@ -175,7 +162,7 @@ response is then relayed back to the original requestor.
 
 Since Request URLs give access to the incoming request stream for an
 Application, they SHOULD be unguessable (for instance, by
-incorporating a GUID or other nonce value) and SHOULD NOT be visible
+incorporating a UUID or other nonce value) and SHOULD NOT be visible
 in any kind of public index.
 
 ### Pipelines, Envelopes, and Payloads
@@ -292,9 +279,9 @@ Applications MUST NOT assume a particular scheme for construction of
 the Public Application URL, and MUST instead use the `rel="related"`
 `Link` header in the registration response as their public address.
 
-### Lease expiry
-
-HERE
+If virtual-host-based URL construction is used, care must be taken to
+treat the Application Name case-insensitively, as DNS labels are
+case-insensitive.
 
 ## Waiting for a request to arrive
 
@@ -531,11 +518,24 @@ requests.
 
 ## Security Considerations
 
-HERE
+Securing the registration of pieces of URL-space is important. Gateway
+Servers can use any means of HTTP or HTTPS authentication and
+authorisation to control access to the Gateway Service URL and to
+Private Application URLs and Request URLs. In particular, on any of
+the interactions described above between the Gateway Server and the
+Application, all the usual HTTP response codes apply, including 401
+and 403 for authentication and authorisation control.
 
-Securing the registration of pieces of URL-space is important
+Besides traditional HTTP/HTTPS access control, unguessable URLs
+(including UUIDs or similar) can be used to provide a capability-style
+model of access control.
 
-More generally, all the usual HTTP response codes apply, 401 and 403 for authentication and authorisation.
+Interactions between third parties and Applications are to be relayed
+through the Gateway Service: it is not the Service's role to control
+access to Application resources. Instead, Applications themselves
+should check the credentials offered in each third-party HTTP request,
+and should return 401 and 403 responses as appropriate to the third
+parties.
 
 ## Normative References
 
