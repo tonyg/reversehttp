@@ -179,6 +179,8 @@ function parseLinkHeaders(s) {
 }
 
 function HttpServer(label, callback, options) {
+    var $elf = this;
+
     this.label = label;
     this.failureDelay = 2000;
     this.callback = callback;
@@ -194,8 +196,12 @@ function HttpServer(label, callback, options) {
     this.nextReq = null;
     this.location = null;
     this.pollRequest = null;
-    this.options.debug("Declaring label " + label);
-    this.serve();
+
+    // Avoid endlessly-spinning loading-indicator in Safari.
+    setTimeout(function () {
+		   $elf.options.debug("Declaring label " + label);
+		   $elf.serve();
+	       }, 1);
 }
 
 HttpServer.prototype.stop = function () {
