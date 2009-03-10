@@ -1,9 +1,5 @@
 # Reverse HTTP
 
-@TOC@
-
-  [Streaming]: #streaming
-
 ## Abstract
 
 This document describes a dynamic, ReST-style means of enrolment and
@@ -15,6 +11,12 @@ Joining the World Wide Web as an HTTP server has been an ad-hoc,
 manual process. By using the protocol defined here, programs can
 provide services to the Web just as easily as they request services
 from the Web.
+
+----
+
+@TOC@
+
+  [Streaming]: #streaming
 
 ## Introduction
 

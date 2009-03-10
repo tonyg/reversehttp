@@ -38,6 +38,10 @@ h2, h3, h4, h5, h6 {
     padding-left: 10px;
 }
 
+h3, h4, h5, h6 {
+    padding-left: 30px;
+}
+
 div#outerContainer {
     margin: 0 0 0 60px;
     background: white;

@@ -1,7 +1,5 @@
 # Relay HTTP
 
-@TOC@
-
 ## Abstract
 
 This document describes a protocol for tunnelling HTTP traffic over
@@ -13,6 +11,10 @@ The defined protocol is similar to the widely used HTTP proxying
 protocol, but differs in that the proxied traffic is carried over an
 ordinary HTTP connection; the special syntax used by an HTTP proxy is
 avoided here.
+
+----
+
+@TOC@
 
 ## Introduction
 
@@ -249,7 +251,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE DOCUMENTATION OR THE USE OR OTHER DEALINGS IN THE
 DOCUMENTATION.
 
-## Appendix A: Example messages
+## Appendix: Example messages
 
 The following sections provide example `message/http` Envelope
 Requests and Responses that correspond to the running example given in

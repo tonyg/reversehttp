@@ -37,14 +37,14 @@ The ReverseHttp software bundle contains
 
  - Client libraries for
 
-   - Javascript in the browser
-     ([browse source](http://github.com/tonyg/reversehttp/blob/master/priv/www/httpd.js))
+    - Javascript in the browser
+      ([browse source](http://github.com/tonyg/reversehttp/blob/master/priv/www/httpd.js))
 
-   - Python
-     ([browse source](http://github.com/tonyg/reversehttp/blob/master/priv/python/reversehttp.py))
+    - Python
+      ([browse source](http://github.com/tonyg/reversehttp/blob/master/priv/python/reversehttp.py))
 
-   - Java
-     ([browse source](http://github.com/tonyg/reversehttp/tree/master/priv/java/net/reversehttp))
+    - Java
+      ([browse source](http://github.com/tonyg/reversehttp/tree/master/priv/java/net/reversehttp))
 
 ## How is it licensed?
 
