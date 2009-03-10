@@ -66,6 +66,12 @@ barriers to universal use of HTTP push and [web hooks][], and makes it
 possible to push the use of long-polling out to the very edges of the
 network.
 
+### Requirements
+
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+"SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+document are to be interpreted as described in [RFC 2119][].
+
 ### Existing server extension mechanisms
 
 There are several widely-deployed methods for extending web servers,
@@ -224,10 +230,10 @@ If the `token` parameter is omitted, the service SHOULD act as if a
 fresh, random token was supplied, thereby ensuring a
 first-in-first-served policy on application name registrations.
 
-If the `lease` parameter is omitted, the service SHOULD choose a value
+If the `lease` parameter is omitted, the service should choose a value
 for the lease-expiry-time long enough to give the newly-registered
 service time to start polling for incoming requests. If the `lease`
-parameter is present, the service SHOULD try to honour it as far as
+parameter is present, the service should try to honour it as far as
 possible, however overly-short or overly-long leases MAY be altered by
 the service without notice to the application.
 
@@ -267,7 +273,7 @@ the configuration of the registration.
 
 The Public Application URL is chosen by the server on an
 application-by-application basis, and can be of any form, though it
-SHOULD include the application name. Two major possibilities exist:
+should include the application name. Two major possibilities exist:
 
  - virtual-host-based: `http://applicationname.example.com/` (perhaps
    using wildcard `CNAME`s in DNS to support arbitrary application
@@ -321,7 +327,7 @@ Gateway Service has decided to use them.
 Embedded Pipelines will carry the HTTP `Method`, `Request-URI` and
 `HTTP-version` values that were sent by the original requestor. The
 Gateway Service MUST NOT alter the embedded HTTP headers or the
-`Request-URI` when it relays request on to applications.
+`Request-URI` when it relays requests on to applications.
 
 All 2xx-series responses MUST have a `Link` header with `rel="next"`
 pointing to the next Request URL the application should use. If an
@@ -356,14 +362,17 @@ constructed an appropriate HTTP response, it uses `POST` to the
 Request URL from which it received the request to cause the reply to
 be relayed on to the original requestor.
 
-The `Content-type` of the `POST` MUST be the same as the
+The `Content-type` of the `POST` SHOULD be the same as the
 `Content-type` received on the Envelope HTTP Response from the `GET`,
-and MUST NOT be absent; that is, if the Gateway Service sent an
-Embedded HTTP Request Pipeline, the `POST`ed response must be an
+and SHOULD NOT be absent; that is, if the Gateway Service sent an
+Embedded HTTP Request Pipeline, the `POST`ed response should be an
 Embedded HTTP Response Pipeline labelled as `application/http`, and if
 the Gateway Service sent an Embedded HTTP Request Message, the
-`POST`ed response must be an Embedded HTTP Response Message labelled
-as `message/http`.
+`POST`ed response should be an Embedded HTTP Response Message labelled
+as `message/http`. The Gateway Service MAY permit other
+`Content-type`s, such as `application/x-www-form-urlencoded`, since
+some HTTP client libraries do not offer control over the
+`Content-type` header.
 
 The submitted entity body MUST be a valid HTTP response Pipeline or
 Message, as appropriate.
@@ -438,17 +447,17 @@ implemented at all.
 
 ### Querying Gateway Service status
 
-Issuing a `GET` to the Gateway Service URL SHOULD, after appropriate
+Issuing a `GET` to the Gateway Service URL should, after appropriate
 authentication and authorisation checks, retrieve a representation of
 the state of the entire Gateway Service, either in HTML or in a
-machine-readable format. The `Accept` header SHOULD be used to control
+machine-readable format. The `Accept` header may be used to control
 the format of the returned information.
 
 ### Querying registration status
 
 Issuing a `GET` to the Private Application URL SHOULD retrieve a
 representation of the state of the registration. The `Accept` header
-SHOULD be used to control the format of the returned information.
+MAY be used to control the format of the returned information.
 
 Gateway Services SHOULD support returning information about registrations in
 
@@ -544,6 +553,9 @@ parties.
  - [RFC 1945][], Hypertext Transfer Protocol -- HTTP/1.0,
    T. Berners-Lee et al.
 
+ - [RFC 2119][] (BCP 14), Key words for use in RFCs to Indicate
+   Requirement Levels, S. Bradner
+
  - [RFC 2616][], Hypertext Transfer Protocol -- HTTP/1.1, R. Fielding
    et al.
 
@@ -565,6 +577,7 @@ parties.
 
   [RFC 1034]: http://www.ietf.org/rfc/rfc1034.txt
   [RFC 1945]: http://www.w3.org/Protocols/rfc1945/rfc1945
+  [RFC 2119]: http://www.ietf.org/rfc/rfc2119.txt
   [RFC 2616]: http://www.w3.org/Protocols/rfc2616/rfc2616.html
   [CGI]: http://www.ietf.org/rfc/rfc3875.txt
   [draft-nottingham-http-link-header-04]: http://tools.ietf.org/id/draft-nottingham-http-link-header-04.txt

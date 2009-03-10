@@ -32,6 +32,12 @@ by the site hosting a browser-based application, gives the Javascript
 component of the application full (but controllable) access to the
 entirety of the web in a standard way.
 
+### Requirements
+
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+"SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+document are to be interpreted as described in [RFC 2119][].
+
 ## Definitions
 
 ### Relay Endpoints
@@ -111,7 +117,7 @@ Message, as defined by [RFC 2616][] or [RFC 1945][].
 
 If the Embedded Pipeline only contains a single message (making it, in
 fact, an Embedded Message), then the `Content-Type` header of the
-Envelope Request MUST be `message/http`. If it contains more than one
+Envelope Request SHOULD be `message/http`. If it contains more than one
 message (making it a true Embedded Pipeline), then the `Content-Type`
 header of the Envelope Request MUST be `application/http`.
 
@@ -136,7 +142,9 @@ support Embedded Pipelines proper, with `Content-Type` of
 `application/http`. If it does not support Pipelines,
 `application/http`, then it MUST reply to any `application/http`
 Envelope Request with a status code of 415, and MUST NOT relay the
-Embedded Pipeline.
+Embedded Pipeline. If an Envelope Request has an unrecognised
+`Content-Type` (such as `application/x-www-form-urlencoded`), the
+Relay Endpoint SHOULD treat it as if it were `message/http`.
 
 > _Rationale_: Naive RelayHttp services that do not parse Embedded
 > Pipelines cannot in general tell when to stop collecting a response
@@ -147,8 +155,8 @@ The Relay Endpoint MAY examine the Embedded Pipeline, in combination
 with the `relay` parameter, in order to decide whether to perform the
 actual relaying or not. If it decides not to proceed with the relay
 after such an examination, because of security policy configuration or
-otherwise, it MAY reply to the Envelope Request with status codes 401
-or 403 as appropriate.
+otherwise, it MAY reply to the Envelope Request (NB: not the Embedded
+Request(s)) with status codes 401 or 403 as appropriate.
 
 Otherwise, the Relay Endpoint opens an outbound HTTP connection to the
 hostname and port number specified as part of the Envelope Request's
@@ -175,9 +183,10 @@ sent back by the Relay Endpoint, the sender of the Envelope Request
 should treat the missing responses as it would for a dropped TCP
 connection if it were accessing the remote server directly.
 
-If the Envelope Request was of type `message/http`, then the Envelope
-Response MUST be given a `Content-Type` of `message/http`, and MUST
-contain exactly one HTTP response message.
+If the Envelope Request was of type `message/http` (or was treated as
+if this were the case), then the Envelope Response MUST be given a
+`Content-Type` of `message/http`, and MUST contain exactly one HTTP
+response message.
 
 ## Security Considerations
 
@@ -192,6 +201,9 @@ for controlling such policies are outside the scope of this document.
 
 ## Normative References
 
+ - [RFC 2119][] (BCP 14), Key words for use in RFCs to Indicate
+   Requirement Levels, S. Bradner
+
  - [RFC 1945][], Hypertext Transfer Protocol -- HTTP/1.0,
    T. Berners-Lee et al.
 
@@ -199,6 +211,7 @@ for controlling such policies are outside the scope of this document.
    et al.
 
   [Comet]: http://en.wikipedia.org/wiki/Comet_(programming)
+  [RFC 2119]: http://www.ietf.org/rfc/rfc2119.txt
   [RFC 2616]: http://www.w3.org/Protocols/rfc2616/rfc2616.html
   [RFC 2617]: http://www.ietf.org/rfc/rfc2617.txt
   [RFC 2818]: http://www.ietf.org/rfc/rfc2818.txt
