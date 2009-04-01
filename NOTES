@@ -1,6 +1,10 @@
 Authentication
  - 401, 403
 
+Split reversehttp spec into two (or more?) pieces
+
+Write up the interaction with transparent proxies etc
+
 Presence!
 
 Multimedia messaging
