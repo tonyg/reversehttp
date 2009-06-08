@@ -39,3 +39,5 @@ requestor.
 Implement deregistration.
 
 Implement some kind of security (authentication/authorisation) hook.
+
+Consider http://www.ietf.org/internet-drafts/draft-snell-http-batch-00.txt
