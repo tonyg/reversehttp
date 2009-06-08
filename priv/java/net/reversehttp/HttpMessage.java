@@ -110,7 +110,7 @@ public abstract class HttpMessage {
     }
 
     protected boolean readBody(InputStream s) throws IOException {
-        if (headers.containsKey("content-length")) {
+        if (headers != null && headers.containsKey("content-length")) {
             int contentLength = Integer.parseInt((String) headers
                     .get("content-length"));
             body = new byte[contentLength];
