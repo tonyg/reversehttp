@@ -131,7 +131,7 @@ def test():
     if len(sys.argv) > 2:
         s = sys.argv[2]
     else:
-        s = 'http://localhost.lshift.net:8000/reversehttp'
+        s = 'http://localhost:8000/reversehttp'
 
     class TestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         counter = 0

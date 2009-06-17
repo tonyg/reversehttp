@@ -26,7 +26,7 @@ public class TestReverseHttpService implements RequestHandler,
 
             label = (args.length > 0) ? args[0] : "java";
             String hostAndPort = (args.length > 1) ? args[1]
-                    : "localhost.lshift.net:8000";
+                    : "localhost:8000";
 
             URL reflectorUrl = new URL("http://" + hostAndPort + "/reversehttp");
             TestReverseHttpService service = new TestReverseHttpService();

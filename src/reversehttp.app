@@ -13,9 +13,7 @@
   {env, [{reflector_config,
           [{request_parser_module, reqparser_path},
            {access_point_hosts, ["localhost",
-                                 "localhost:8000",
-                                 "localhost.lshift.net",
-                                 "localhost.lshift.net:8000"]},
+                                 "localhost:8000"]},
            {access_point_paths, ["/reversehttp"]}]},
          {port, 8000}]},
   {applications, [kernel, stdlib, crypto]}]}.
