@@ -16,8 +16,6 @@ When considering policies for unsubscription, perhaps include a
 generation-number with a subscription? That way, flapping can be
 avoided by auto-unsubscribing only a given generation...
 
-Support non-vhost-based claims
-
 Investigate the use of global:register_name to replace the ets table
  - works, but slow; mnesia better?
 

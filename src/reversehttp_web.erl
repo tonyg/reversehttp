@@ -12,21 +12,21 @@
 
 start(Options) ->
     {DocRoot, Options1} = get_option(docroot, Options),
-    ExceptionHosts = case application:get_env(exception_hosts) of
-                         undefined -> [{"localhost", ["/reversehttp"]}];
+    ReflectorConfig = case application:get_env(reflector_config) of
+                         undefined -> [{exception_hosts, [{"localhost", ["/reversehttp"]}]}];
                          {ok, V} -> V
                      end,
-    error_logger:info_report({reversehttp_web, exception_hosts, ExceptionHosts}),
+    error_logger:info_report({reversehttp_web, config, ReflectorConfig}),
     Loop = fun (Req) ->
-                   ?MODULE:loop(Req, DocRoot, ExceptionHosts)
+                   ?MODULE:loop(Req, DocRoot, ReflectorConfig)
            end,
     mochiweb_http:start([{name, ?MODULE}, {loop, Loop} | Options1]).
 
 stop() ->
     mochiweb_http:stop(?MODULE).
 
-loop(Req, DocRoot, ExceptionHosts) ->
-    case catch reflect_request_queue:handle(Req, ExceptionHosts) of
+loop(Req, DocRoot, ReflectorConfig) ->
+    case catch reflect_request_queue:handle(Req, ReflectorConfig) of
         {'EXIT', normal} ->
             ok;
         {'EXIT', Reason} ->
@@ -35,14 +35,13 @@ loop(Req, DocRoot, ExceptionHosts) ->
                                        {request, Req:dump()}}),
             Req:respond({500, [], "Reflector error"}),
             ok;
-        exception_host ->
-            loop1(Req, DocRoot);
-        _ ->
+        {normal, Path} ->
+            static_content(Req, Path, DocRoot);
+        ok ->
             ok
     end.
 
-loop1(Req, DocRoot) ->
-    "/" ++ Path = Req:get(path),
+static_content(Req, Path, DocRoot) ->
     case Req:get(method) of
         Method when Method =:= 'GET'; Method =:= 'HEAD' ->
             case Path of

@@ -9,9 +9,9 @@
 %% A reversehttp request can be one of the following:
 %%
 %%  - a request for real content from the main vhost
-%%  - a request to set up a virtual host
-%%  - a poll for requests sent to a virtual host
-%%  - a reply to a request sent to a virtual host
+%%  - a request to set up a delegated portion of URL space
+%%  - a poll for requests sent to a delegated portion of URL space
+%%  - a reply to a request sent to a delegated portion of URL space
 %%  - a tunnelled outbound request to be relayed
 %%
 %% First and foremost, if it's a request for a virtual host, we need
@@ -19,45 +19,28 @@
 %% request further to see which of the other four categories it falls
 %% into.
 
-handle(Req, ExceptionHosts) ->
-    case Req:get_header_value(host) of
-        undefined ->
-            error(Req, 400, "Missing Host HTTP header");
-        MixedCaseHost ->
-            Host = string:to_lower(MixedCaseHost),
-            case lists:keysearch(Host, 1, ExceptionHosts) of
-                {value, {_, AccessPoints}} ->
-                    %% The request was for one of our configured
-                    %% access-point hosts. Now, check the raw_path to
-                    %% see if it matches an access-point path.
-                    handle_exception_host(Req, AccessPoints);
-                false ->
-                    single_request(Req, Host)
-            end
-    end.
-
-%%--------------------------------------------------------------------
-
-handle_exception_host(Req, AccessPoints) ->
-    {Path, QueryPart, _Fragment} = mochiweb_util:urlsplit_path(Req:get(raw_path)),
-    case find_access_point(Path, AccessPoints) of
-        {ok, AccessPoint, PathComponents} ->
-            %% The request was for one of our access points.
-            QueryFields = mochiweb_util:parse_qs(QueryPart),
+handle(Req, Config) ->
+    Mod = reqparser(Config),
+    case Mod:analyse(Req, Config) of
+        {error, Code, ExplanatoryBodyText} ->
+            error(Req, Code, ExplanatoryBodyText),
+            ok;
+        {single_request, ExternalAppUrlPrefix} ->
+            single_request(Req, ExternalAppUrlPrefix),
+            ok;
+        {normal, Path} ->
+            {normal, Path};
+        {access_point, AccessUrl, PathComponents, QueryFields} ->
             handle_reverse_http(Req,
+                                Config,
                                 Req:get(method),
-                                AccessPoint,
+                                AccessUrl,
                                 PathComponents,
-                                QueryFields);
-        {error, not_found} ->
-            %% It's a request for content from the main vhost(s). The
-            %% special token exception_host is passed back to our
-            %% caller to indicate that they should serve content as
-            %% usual.
-            exception_host
+                                QueryFields),
+            ok
     end.
 
-single_request(Req, Host) ->
+single_request(Req, ExternalAppUrlPrefix) ->
     case request_host(Req) of
         {error, Reason} ->
             error(Req, 400, "Could not determine your IP address", Reason);
@@ -65,11 +48,11 @@ single_request(Req, Host) ->
             FormattedRequest = format_req(Req, Req:recv_body()),
             Msg = #poll_response{requesting_client = RequestHost,
                                  formatted_request = FormattedRequest},
-            case reflect_vhost_manager:request(Host, Msg) of
+            case reflect_vhost_manager:request(ExternalAppUrlPrefix, Msg) of
                 {error, not_found} ->
-                    error(Req, 404, "Virtual host not found", Host);
+                    error(Req, 404, "Delegation not found", ExternalAppUrlPrefix);
                 {error, noproc} ->
-                    error(Req, 503, "Virtual host manager crashed", Msg);
+                    error(Req, 503, "Delegation manager crashed", Msg);
                 {error, {timeout, poller}} ->
                     error(Req, 504, "No available servers");
                 {error, {timeout, downstream}} ->
@@ -89,7 +72,7 @@ single_request(Req, Host) ->
             end
     end.
 
-handle_reverse_http(Req, 'POST', _AP, ["_relay", HostAndPort], _QueryFields) ->
+handle_reverse_http(Req, _Config, 'POST', _AccessUrl, ["_relay", HostAndPort], _QueryFields) ->
     case extract_host_and_port(HostAndPort) of
         {error, _} ->
             error(Req, 400, "Bad host:port in relay request");
@@ -109,7 +92,7 @@ handle_reverse_http(Req, 'POST', _AP, ["_relay", HostAndPort], _QueryFields) ->
             end
     end;
 
-handle_reverse_http(Req, 'POST', AP, [], UrlQueryFields) ->
+handle_reverse_http(Req, Config, 'POST', AccessUrl, [], UrlQueryFields) ->
     BodyQueryFields = case Req:recv_body() of
                           undefined -> [];
                           V -> mochiweb_util:parse_qs(V)
@@ -118,27 +101,23 @@ handle_reverse_http(Req, 'POST', AP, [], UrlQueryFields) ->
     case lists:keysearch("name", 1, QueryFields) of
         {value, {_, MixedCaseHostLabel}} ->
             HostLabel = string:to_lower(MixedCaseHostLabel),
-            Token = case lists:keysearch("token", 1, QueryFields) of
-                        {value, {_, T}} -> T;
-                        false -> random_id(HostLabel)
-                    end,
-            LeaseSecondsStr = case lists:keysearch("lease", 1, QueryFields) of
-                                  {value, {_, L}} -> L;
-                                  false -> "0"
-                              end,
+            Token = reversehttp:lookup("token", QueryFields, random_id(HostLabel)),
+            LeaseSecondsStr = reversehttp:lookup("lease", QueryFields, "0"),
             case catch list_to_integer(LeaseSecondsStr) of
                 {'EXIT', _} ->
                     error(Req, 400, "Invalid lease seconds setting", LeaseSecondsStr);
                 LeaseSeconds ->
                     ReqName = random_id({HostLabel, Token}),
-                    Headers = [link_header(format_request_url(Req,
-                                                              AP, HostLabel, Token, ReqName),
-                                           "first"),
-                               link_header(format_ext_vhost_url(Req, HostLabel),
-                                           "related"),
-                               {"Location", format_int_vhost_url(Req, AP, HostLabel, Token)}],
-                    Host = expand_host_label(Req, HostLabel),
-                    case reflect_vhost_manager:configure(Host, Token, LeaseSeconds) of
+                    Mod = reqparser(Config),
+                    ExternalAppUrlPrefix = Mod:ext_url(Req, Config, HostLabel),
+                    FirstUrl = format_request_url(AccessUrl, HostLabel, Token, ReqName),
+                    IntUrl = format_int_vhost_url(AccessUrl, HostLabel, Token),
+                    Headers = [link_header(FirstUrl, "first"),
+                               link_header(ExternalAppUrlPrefix, "related"),
+                               {"Location", IntUrl}],
+                    case reflect_vhost_manager:configure(ExternalAppUrlPrefix,
+                                                         Token,
+                                                         LeaseSeconds) of
                         {ok, existing, _Pid} ->
                             Req:respond({204, Headers, []});
                         {ok, new, _Pid} ->
@@ -146,19 +125,22 @@ handle_reverse_http(Req, 'POST', AP, [], UrlQueryFields) ->
                         {error, bad_token} ->
                             error(Req, 403, "Bad token", HostLabel);
                         {error, Reason} ->
-                            error(Req, 502, "Could not configure vhost manager", {Host, Reason})
+                            error(Req, 502, "Could not configure delegation manager",
+                                  {ExternalAppUrlPrefix, Reason})
                     end
             end;
         false ->
             error(Req, 400, "Missing label parameter", QueryFields)
     end;
 
-handle_reverse_http(Req, 'GET', AP, [HostLabel, Token, ReqName], _QueryFields) ->
+handle_reverse_http(Req, Config, 'GET', AccessUrl, [HostLabel, Token, ReqName], _QueryFields) ->
     NextReqName = random_id({HostLabel, Token}),
-    Headers = [link_header(format_request_url(Req, AP, HostLabel, Token, NextReqName), "next")],
-    Host = expand_host_label(Req, HostLabel),
+    Headers = [link_header(format_request_url(AccessUrl, HostLabel, Token, NextReqName),
+                           "next")],
+    Mod = reqparser(Config),
+    ExternalAppUrlPrefix = Mod:ext_url(Req, Config, HostLabel),
     case reflect_vhost_manager:poll(
-           Host, Token, ReqName,
+           ExternalAppUrlPrefix, Token, ReqName,
            fun (#poll_response{requesting_client = RC, formatted_request = FR}) ->
                    Req:respond({200,
                                 Headers ++ [{'Content-type', "message/http"},
@@ -167,7 +149,7 @@ handle_reverse_http(Req, 'GET', AP, [HostLabel, Token, ReqName], _QueryFields) -
                    ok
            end) of
         {error, noproc} ->
-            error(Req, 503, "Virtual host manager crashed", HostLabel);
+            error(Req, 503, "Delegation manager crashed", HostLabel);
         {error, timeout} ->
             Req:respond({204, Headers, []});
         {error, bad_token} ->
@@ -178,7 +160,7 @@ handle_reverse_http(Req, 'GET', AP, [HostLabel, Token, ReqName], _QueryFields) -
             ok
     end;
 
-handle_reverse_http(Req, 'POST', _AP, [HostLabel, _Token, ReqName], _QueryFields) ->
+handle_reverse_http(Req, _Config, 'POST', _AccessUrl, [HostLabel, _Token, ReqName], _QueryFields) ->
     case reflect_vhost_manager:respond(
            ReqName,
            fun () ->
@@ -195,35 +177,27 @@ handle_reverse_http(Req, 'POST', _AP, [HostLabel, _Token, ReqName], _QueryFields
             Req:respond({202, [], []})
     end;
 
-handle_reverse_http(Req, 'GET', AP, PathComponents, QueryFields) ->
-    handle_meta(Req, AP, PathComponents, QueryFields);
+handle_reverse_http(Req, Config, 'GET', AccessUrl, PathComponents, QueryFields) ->
+    handle_meta(Req, Config, AccessUrl, PathComponents, QueryFields);
 
-handle_reverse_http(Req, Method, AP, PathComponents, QueryFields) ->
-    error(Req, 400, "Bad Reverse-HTTP Request", {Method, AP, PathComponents, QueryFields}).
+handle_reverse_http(Req, _Config, Method, AccessUrl, PathComponents, QueryFields) ->
+    error(Req, 400, "Bad Reverse-HTTP Request", {Method, AccessUrl, PathComponents, QueryFields}).
 
 -ifdef(ENABLE_META).
-handle_meta(Req, AP, PathComponents, QueryFields) ->
-    reflect_meta:handle(Req, AP, PathComponents, QueryFields).
+handle_meta(Req, Config, AccessUrl, PathComponents, QueryFields) ->
+    reflect_meta:handle(Req, Config, AccessUrl, PathComponents, QueryFields).
 -else.
-handle_meta(Req, AP, PathComponents, QueryFields) ->
+handle_meta(_Req, _Config, _AccessUrl, _PathComponents, _QueryFields) ->
     ok.
 -endif.
 
 %%--------------------------------------------------------------------
 
-expand_host_label(Req, HostLabel) ->
-    HostLabel ++ "." ++ string:to_lower(Req:get_header_value(host)).
+format_int_vhost_url(AccessUrl, HostLabel, Token) ->
+    AccessUrl ++ "/" ++ HostLabel ++ "/" ++ Token.
 
-format_ext_vhost_url(Req, HostLabel) ->
-    "http://" ++ expand_host_label(Req, HostLabel) ++ "/".
-
-format_int_vhost_url(Req, AccessPoint, HostLabel, Token) ->
-    "http://" ++ Req:get_header_value(host) ++
-        AccessPoint ++ "/" ++ HostLabel ++ "/" ++ Token.
-
-format_request_url(Req, AccessPoint, HostLabel, Token, ReqName) ->
-    "http://" ++ Req:get_header_value(host) ++
-        AccessPoint ++ "/" ++ HostLabel ++ "/" ++ Token ++ "/" ++ ReqName.
+format_request_url(AccessUrl, HostLabel, Token, ReqName) ->
+    AccessUrl ++ "/" ++ HostLabel ++ "/" ++ Token ++ "/" ++ ReqName.
 
 link_header(Url, Rel) ->
     {'Link', "<" ++ Url ++ ">; rel=\"" ++ Rel ++ "\""}.
@@ -240,18 +214,6 @@ error(Req, StatusCode, ExplanatoryBodyText, ExtraInfo) ->
                                  {reply, StatusCode, ExplanatoryBodyText},
                                  ExtraInfo}),
     Req:respond({StatusCode, [], integer_to_list(StatusCode) ++ " " ++ ExplanatoryBodyText}).
-
-find_access_point(_Path, []) ->
-    {error, not_found};
-find_access_point(Path, [AccessPoint | AccessPoints]) ->
-    case lists:prefix(AccessPoint, Path) of
-        true ->
-            StrippedPath = string:substr(Path, length(AccessPoint) + 1),
-            PathComponents = string:tokens(StrippedPath, "/"),
-            {ok, AccessPoint, PathComponents};
-        false ->
-            find_access_point(Path, AccessPoints)
-    end.
 
 request_host(Req) ->
     Sock = Req:get(socket),
@@ -297,3 +259,6 @@ format_req(Req, Body) ->
         _ ->
             [MethodLine, Headers, Body]
     end.
+
+reqparser(Config) ->
+    reversehttp:lookup(request_parser_module, Config, reqparser_vhost).

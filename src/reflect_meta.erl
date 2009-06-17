@@ -1,32 +1,24 @@
 -module(reflect_meta).
 
--export([handle/4]).
+-export([handle/5]).
 
 -define(RPC_TIMEOUT, 10000).
 
-handle(Req, AP, [], _QueryFields) ->
+handle(Req, _Config, AccessUrl, [], _QueryFields) ->
     reply_with(Req, "Access Point",
-               gen_info(Req, AP) ++
-               [{h2, <<"Registered Labels">>},
+               gen_info(Req, AccessUrl) ++
+               [{h2, <<"Registered Delegations">>},
                 {table, [{class, "meta-table"}],
                  [{tr, [], [{th, X} ||
-                               X <- [<<"Label root">>, <<"Details">>]]}] ++
-                 [format_vhost(AP, X) || X <- all_vhosts()]}]).
+                               X <- [<<"Root URL">>, <<"Details">>]]}] ++
+                 [format_vhost(X) || X <- all_vhosts()]}]);
+handle(Req, _Config, _AccessUrl, _PathComponents, _QueryFields) ->
+    Req:not_found().
 
-gen_info(Req, AP) ->
+gen_info(Req, AccessUrl) ->
     [{h2, <<"General Info">>},
-     {p, [<<"Access point info: ">>, hlink(apurl(Req, AP))]},
+     {p, [<<"Access point info: ">>, hlink(AccessUrl)]},
      {p, [<<"Site root: ">>, hlink("http://" ++ Req:get_header_value(host) ++ "/")]}].
-
-apurl(Req, AP) ->
-    "http://" ++ Req:get_header_value(host) ++ AP.
-
-vhroot(VHost) ->
-    "http://" ++ VHost ++ "/".
-
-%% vhurl(AP, VHost) ->
-%%     [Label | Labels] = string:tokens(VHost, "."),
-%%     "http://" ++ string:join(Labels, ".") ++ AP ++ "/" ++ Label.
 
 template(Title, BodyElts) ->
     {html, 
@@ -61,12 +53,6 @@ all_vhosts() ->
 %%      (N = {reflect_vhost_manager, request, H, RN}) <- global:registered_names(),
 %%      H =:= HostLabel ].
 
-keyget(K, L, Def) ->
-    case lists:keysearch(K, 1, L) of
-        {value, {_, V}} -> V;
-        false -> Def
-    end.
-
 explain_status(infinity, PollerCount, _RequestCount) ->
     integer_to_list(PollerCount) ++
         case PollerCount of
@@ -80,10 +66,10 @@ explain_status(ExpiryMs, _PollerCount, RequestCount) ->
             _ -> "ms; " ++ integer_to_list(RequestCount) ++ " request(s) waiting"
         end.
 
-format_vhost(_AP, VHost) ->
+format_vhost(VHost) ->
     Info = reflect_vhost_manager:info(VHost),
     {tr, [],
-     [{td, [], [hlink(vhroot(VHost))]},
-      {td, [], [explain_status(keyget(expiry_ms, Info, 0),
-                               keyget(poller_count, Info, 0),
-                               keyget(request_count, Info, 0))]}]}.
+     [{td, [], [hlink(VHost)]},
+      {td, [], [explain_status(reversehttp:lookup(expiry_ms, Info, 0),
+                               reversehttp:lookup(poller_count, Info, 0),
+                               reversehttp:lookup(request_count, Info, 0))]}]}.
