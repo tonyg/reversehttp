@@ -2,288 +2,206 @@ import BaseHTTPServer
 import httplib
 import time
 import reversehttp
+import base64
+import time
+import pickle
+import zlib
+import hmac
+import random
+import sha
+from urlparse import urlsplit
+from cgi import parse_qsl
 
-try:
-    import simplejson as json
-except ImportError, e:
-    import sys
-    if sys.hexversion >= 0x20600f0:
-        import json
-    else:
-        raise e
-
-class InvalidApplicationNameError(ValueError): pass
-
-def parseName(name):
-    parts = name.split('@', 1)
-    if len(parts) == 1:
-        return (None, parts[0])
-    else:
-        return (parts[0], parts[1])
-
-def joinName((localName, domain)):
-    return localName + '@' + domain
-
-class SmqpMessage:
-    def __init__(self, sender, target, body, contentType = "text/plain", method = "send"):
-        self.sender = sender
-        self.target = target
-        self.body = body
-        self.contentType = contentType
-        self.method = method
-        self.errorReports = []
-
-    def retarget(self, sender, target):
-        return SmqpMessage(sender, target, self.body, self.contentType, self.method)
-
-    def deliver(self,
-                onRetry = None,
-                initialFailureDelay = 2,
-                failureDelayLimit = 30,
-                maxAttemptCount = 3,
-                failureDelayMultiplier = 2):
-        (rawPath, hostAndPort) = parseName(self.target)
-        rawPath = '/' + rawPath
-
-        attemptCount = 0
-        failureDelay = initialFailureDelay
-
-        headers = {'Content-type': self.contentType}
-        if self.sender: headers['X-SMQP-Sender'] = self.sender
-        if self.method: headers['X-SMQP-Method'] = self.method
-
-        self.errorReports = []
-        while attemptCount < maxAttemptCount:
-            try:
-                attemptCount = attemptCount + 1
-                conn = httplib.HTTPConnection(hostAndPort)
-                conn.request("POST", rawPath, body = self.body, headers = headers)
-                resp = conn.getresponse()
-                if resp.status >= 200 and resp.status < 300:
-                    return True
-                else:
-                    self.errorReports.append({'response': resp})
-                    if (resp.status < 500) or (resp.status >= 600):
-                        break
-            except Exception, e:
-                self.errorReports.append({'exception': e})
-            time.sleep(failureDelay)
-            if failureDelay < failureDelayLimit:
-                failureDelay = failureDelay * failureDelayMultiplier
-            if onRetry: onRetry(self)
-        return False
-
-    def jsonBody(self):
-        if not hasattr(self, '_jsonBody'):
-            self._jsonBody = json.loads(self.body)
-        return self._jsonBody
-
-class SmqpServiceContainer:
-    def __init__(self, domain, server):
-        self.domain = domain
+class ServiceContainer:
+    def __init__(self, server):
+        self.pathprefix = ''
         self.server = server
         self.pathMap = {}
         server._smqp_service_container = self
 
-    def extractLocalname(self, name):
-        suffixLength = len(self.domain) + 1
-        prefixLength = len(name) - suffixLength
-        if name[prefixLength:] == "@" + self.domain:
-            return name[:prefixLength]
-        else:
-            raise InvalidApplicationNameError(name)
-
-    def expandLocalname(self, localName):
-        return joinName((localName, self.domain))
+    def setBaseurl(self, baseurl):
+        self.pathprefix = urlsplit(baseurl)[2]
 
     def bindName(self, name, receiver):
-        self.pathMap[self.extractLocalname(name)] = receiver
+        self.pathMap[name] = receiver
 
     def unbindName(self, name):
-        del self.pathMap[self.extractLocalname(name)]
+        del self.pathMap[name]
 
     def respondTo(self, req):
-        targetLocalname = req.path[1:]
-        target = self.expandLocalname(targetLocalname)
-        sender = req.headers.getheader('X-SMQP-Sender')
-        contentType = req.headers.getheader('Content-type')
-        method = req.headers.getheader('X-SMQP-Method', 'send')
-        m = SmqpMessage(sender, target, req.rfile.read(), contentType)
+        if not req.path.startswith(self.pathprefix):
+            req.send_error(404, "Destination not found")
+            return
+
+        reqUrl = urlsplit(req.path[len(self.pathprefix):])
+        pathPieces = reqUrl.path.split("/", 1)
+        target = pathPieces[0]
+        if len(pathPieces) > 1:
+            remainder = pathPieces[1]
+        else:
+            remainder = ''
 
         try:
-            if self.pathMap.has_key(targetLocalname):
-                mname = 'do_' + method
-                recipient = self.pathMap[targetLocalname]
+            if self.pathMap.has_key(target):
+                mname = 'do_' + req.command
+                recipient = self.pathMap[target]
+                params = dict(parse_qsl(reqUrl.query))
                 if hasattr(recipient, mname):
-                    responseCode = (getattr(recipient, mname)(m)) or 200
-                    req.send_response(responseCode)
-                    req.end_headers()
+                    getattr(recipient, mname)(req, remainder, params)
+                elif hasattr(recipient, 'do_FALLBACK'):
+                    recipient.do_FALLBACK(req, remainder, params)
                 else:
-                    req.send_error(501, "Unsupported method (%s)" % (method,))
+                    req.send_error(501, "Unsupported method (%s)" % (req.command,))
             else:
-                req.send_error(404, "Destination not found")
+                req.send_error(404, "Target not found")
         except:
             import traceback
             traceback.print_exc()
             req.send_error(500)
 
-class SmqpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-    def do_POST(self):
-        self.do_GET()
-
-    def do_GET(self):
+class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    def do_PUT(self): self._handle()
+    def do_DELETE(self): self._handle()
+    def do_POST(self): self._handle()
+    def do_GET(self): self._handle()
+    def _handle(self):
         self.server._smqp_service_container.respondTo(self)
 
-def jsonRequest(sender, target, method, body):
-    return SmqpMessage(sender, target, json.dumps(body), "application/json", method)
-
-class SmqpRelay:
-    def __init__(self):
-        self.subscribers = {}
-
-    def addSubscriber(self, name, filter):
-        if not self.vetSubscriber(name, filter):
-            return False
-        self.subscribers[name] = filter
-        self.onSubscriberAdded(name, filter)
-        return True
-
-    def removeSubscriber(self, name):
-        del self.subscribers[name]
-        self.onSubscriberRemoved(name)
-
-    def matchingSubscribers(self, message):
-        result = {}
-        for (name, filter) in self.subscribers.items():
-            if filter(message):
-                result[name] = filter
-        return result
-
-    def decodeFilter(self, spec):
-        return self.defaultFilter() # TODO -- simple filter language?
-
-    def defaultFilter(self):
-        return lambda message: True
-
-    def vetSubscriber(self, name, filter):
-        return True
-
-    def onSubscriberAdded(self, name, filter):
-        pass
-
-    def onSubscriberRemoved(self, name):
-        pass
-
-    def onDeliveryFailure(self, message, target, errorReports):
-        pass
-
-    def checkDeliveryAcceptance(self, completeCount, abortedCount, totalCount):
-        if (totalCount == 0) or (completeCount > 0):
-            return 200
-        if (abortedCount == totalCount):
-            return 200  # absorb failures
-        return None
-
-    def do_send(self, message):
-        return self.acceptMessage(message)
-
-    def do_subscribe(self, message):
-        args = message.jsonBody()
-        if args.has_key('filter'):
-            f = self.decodeFilter(args['filter'])
+class HubModeFacet:
+    def do_FALLBACK(self, req, path, params):
+        hubMode = params.get('hub.mode', '')
+        mname = 'do_' + req.command + '_' + hubMode
+        if hasattr(self, mname):
+            getattr(self, mname)(req, path, params)
         else:
-            f = self.defaultFilter()
-        self.addSubscriber(args['name'], f)
+            req.send_error(501, "Unsupported method/hub.mode (%s, %s)" % (req.command, hubMode))
 
-    def do_unsubscribe(self, message):
-        args = message.jsonBody()
-        self.removeSubscriber(args['name'])
+def random_bytes(n):
+    import array
+    a = array.array('B')
+    for i in xrange(n):
+        a.append(random.randint(0, 255))
+    return a.tostring()
 
-    def acceptMessage(self, message):
-        subs = self.matchingSubscribers(message)
-        return self.deliver(message, subs)
+instance_key = None
+def _key():
+    global instance_key
+    if instance_key is None:
+        instance_key = random_bytes(64)
+    return instance_key
 
-    def deliver(self, message, subs):
-        completeCount = 0
-        abortedCount = 0
+class SignedData:
+    def __init__(self, datum):
+        self.timestamp = time.time()
+        self.nonce = random_bytes(8)
+        self.datum = datum
 
-        for sub in subs:
-            outbound = message.retarget(message.target, sub)
-            if outbound.deliver():
-                completeCount = completeCount + 1
-            else:
-                self.onDeliveryFailure(message, sub, outbound.errorReports)
-                self.removeSubscriber(sub)
-                abortedCount = abortedCount + 1
+def sign_term(v):
+    message = SignedData(v)
+    dataBlock = zlib.compress(pickle.dumps(message))
+    mac = hmac.new(_key(), dataBlock, sha).digest()
+    if len(mac) != 20:
+        raise 'Invalid HMAC length'
+    return mac + dataBlock
 
-        return self.checkDeliveryAcceptance(completeCount, abortedCount, len(subs))
+max_age = 300
+def validate_token(macAndData):
+    global max_age
+    mac = macAndData[:20]
+    dataBlock = macAndData[20:]
+    if hmac.new(_key(), dataBlock, sha).digest() != mac:
+        raise 'HMAC does not match'
+    message = pickle.loads(zlib.decompress(dataBlock))
+    if time.time() - message.timestamp > max_age:
+        raise 'Token expired'
+    return message.datum
+
+class EndpointFacet(HubModeFacet):
+    def __init__(self, sink):
+        self.sink = sink
+
+    def generate_token(self, path, intendedUse):
+        signedTerm = sign_term((path, intendedUse))
+        return base64.urlsafe_b64encode(signedTerm)
+
+    def check_token(self, token, path, actualUse):
+        try:
+            (tPath, tUse) = validate_token(base64.urlsafe_b64decode(token))
+            if tPath != path: return False
+            if tUse != actualUse: return False
+            return self.sink.check_action(actualUse, path)
+        except:
+            return False
+
+    def do_check_token(self, req, path, params, actualUse):
+        if self.check_token(params.get('hub.verify_token', ''), path, actualUse):
+            req.send_response(204)
+            req.end_headers()
+        else:
+            req.send_error(400, "Bad hub.verify_token")
+
+    def do_GET_(self, req, path, params):
+        req.send_response(200)
+        req.send_header("Content-type", "text/plain")
+        req.end_headers()
+        req.wfile.write("Endpoint facet: " + str(self.sink))
+
+    def do_GET_subscribe(self, req, path, params):
+        self.do_check_token(req, path, params, "subscribe")
+
+    def do_GET_unsubscribe(self, req, path, params):
+        self.do_check_token(req, path, params, "unsubscribe")
+
+    def do_GET_generate_token(self, req, path, params):
+        token = self.generate_token(path, params['hub.intended_use'])
+        req.send_response(200)
+        req.send_header("Content-type", "application/x-www-form-urlencoded")
+        req.end_headers()
+        req.wfile.write("hub.verify_token=" + token)
+
+    def do_POST(self, req, path, params):
+        self.sink.deliver(params.get('hub.topic', ''),
+                          req.headers.getheader('content-type'),
+                          req.rfile.read())
+        req.send_response(204)
+        req.end_headers()
 
 def test_container(label, hostAndPort):
     httpd = reversehttp.ReverseHttpServer(label,
                                           "http://" + hostAndPort + "/reversehttp",
-                                          SmqpRequestHandler)
-    container = SmqpServiceContainer(label + '.' + hostAndPort, httpd)
+                                          RequestHandler)
+    container = ServiceContainer(httpd)
+
+    def cb(x):
+        print 'Location:', x.location
+        container.setBaseurl(x.location)
+
+    httpd.locationChangeCallback = cb
     return httpd, container
 
-def test_relay(label = 'relay', hostAndPort = 'localhost.lshift.net:8000'):
-    class R(SmqpRelay):
-        def onSubscriberAdded(self, name, filter):
-            print 'Subscription added:', name
-        def onSubscriberRemoved(self, name):
-            print 'Subscription removed:', name
-        def onDeliveryFailure(self, message, target, errorReports):
-            print 'Delivery failure:', target, errorReports
-    httpd, container = test_container(label, hostAndPort)
-    container.bindName(container.expandLocalname("relay"), R())
-    httpd.serve_forever()
-
-def test_pub(target = 'relay@relay.localhost.lshift.net:8000', body = 'testing'):
-    SmqpMessage(None, target, body).deliver()
-
-def test_pubmany(target = 'relay@relay.localhost.lshift.net:8000', body = 'testing'):
-    counter = 0
-    startTime = time.time()
-    reportEvery = 1000
-    while 1:
-        SmqpMessage(None, target, body + str(counter)).deliver()
-        counter = counter + 1
-        if (counter % reportEvery) == 0:
-            now = time.time()
-            print counter, str(float(reportEvery) / (now - startTime)) + 'Hz'
-            startTime = now
-
-def test_sub(source = 'relay@relay.localhost.lshift.net:8000',
-             hostAndPort = 'localhost.lshift.net:8000'):
+def test_endpoint(hostAndPort = 'localhost:8000'):
     class S:
-        def do_send(self, message):
-            print message.sender,'->',message.target,message.contentType,':',message.body
+        def check_action(self, actualUse, path):
+            print repr(("check_action", actualUse, path))
+            return True
+
+        def deliver(self, topic, contentType, body):
+            print repr(("deliver", topic, contentType, body))
+
     import random
-    label = 'pythonsub' + str(int(random.uniform(0, 100000)))
+    label = 'pythonsub' ## + str(int(random.uniform(0, 100000)))
     httpd, container = test_container(label, hostAndPort)
-    qName = container.expandLocalname("queue")
-    container.bindName(qName, S())
-    req = jsonRequest(qName, source, 'subscribe', {'name': qName, 'filter': None})
-    if not req.deliver():
-        print 'Subscription failed!'
-        print req.errorReports
-        import sys
-        sys.exit(1)
-    print 'Subscribed...'
+    sink = S()
+    container.bindName("ep", EndpointFacet(sink))
     httpd.serve_forever()
 
 if __name__ == '__main__':
     import sys
     if len(sys.argv) <= 1:
-        print 'Usage: smqp.py (relay|pub|pubmany|sub) [arg ...]'
+        print 'Usage: smqp.py endpoint [arg ...]'
         sys.exit(1)
     mode = sys.argv[1]
-    if mode == 'relay':
-        test_relay(*sys.argv[2:])
-    elif mode == 'pub':
-        test_pub(*sys.argv[2:])
-    elif mode == 'pubmany':
-        test_pubmany(*sys.argv[2:])
-    elif mode == 'sub':
-        test_sub(*sys.argv[2:])
+    if mode == 'endpoint':
+        test_endpoint(*sys.argv[2:])
     else:
         print 'Invalid mode %s' % (mode,)
