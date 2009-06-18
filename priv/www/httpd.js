@@ -1,26 +1,40 @@
 function Url(maybeStr) {
-    var r;
-    if (maybeStr) {
-	r = maybeStr.toString().match(Url.regex);
-	if (!r) throw {error: "url_invalid", url: maybeStr};
+    if (maybeStr instanceof Url) {
+	this.url = maybeStr.url;
+	this.protocol = maybeStr.protocol;
+	this.username = maybeStr.username;
+	this.password = maybeStr.password;
+	this.host = maybeStr.host;
+	this.port = maybeStr.port;
+	this.pathname = maybeStr.pathname;
+	this.querystring = maybeStr.querystring;
+	this.fragment = maybeStr.fragment;
+	return;
     } else {
-	r = [null, null, null, null, null, null, null, null, null, null, null];
-    }
+	var r;
+	if (maybeStr) {
+	    r = maybeStr.toString().match(Url.regex);
+	    if (!r) throw {error: "url_invalid", url: maybeStr};
+	} else {
+	    r = [null, null, null, null, null, null, null, null, null, null, null, null];
+	}
 
-    this.url = r[0];
-    this.protocol = r[2];
-    this.username = r[4];
-    this.password = r[5];
-    this.host = r[6];
-    this.port = r[7];
-    this.pathname = r[8];
-    this.querystring = r[9];
-    this.fragment = r[10];
+	this.url = r[0];
+	this.protocol = r[2];
+	this.username = r[5];
+	this.password = r[7];
+	this.host = r[8] || "";
+	this.port = r[10];
+	this.pathname = r[11] || "";
+	this.querystring = r[13] || "";
+	this.fragment = r[15] || "";
+    }
 }
 
 Url.regex = 
-    /* Regex courtesy of https://code.poly9.com/trac/wiki/URLParser */
-    /^((\w+):\/\/)?((\w+):?(\w+)?@)?([^\/\?:]+):?(\d+)?(\/?[^\?#]+)?\??([^#]+)?#?(\w*)/;
+/*12       3    45     6 7         8          9 A        B                    C  D        E F   */
+/* proto         user    pass      host         port     path                    query      frag */
+/^((\w+):)?(\/\/((\w+)?(:(\w+))?@)?([^\/\?:]+)(:(\d+))?)?(\/?[^\/\?#][^\?#]*)?(\?([^#]+))?(#(\w*))?/;
 
 Url.prototype.getHostPort = function () {
     return this.host + (this.port ? ":" + this.port : "");
@@ -44,6 +58,30 @@ Url.prototype.toString = function () {
     if (this.querystring) { r.push("?" + this.querystring); }
     if (this.fragment) { r.push("#" + this.fragment); }
     return r.join("");
+};
+
+function parse_qs(qs) {
+    var result = {};
+    if (qs) {
+	var keyvals = qs.split('&');
+	for (var i = 0; i < keyvals.length; i++) {
+	    var eqPos = keyvals[i].indexOf('=');
+	    if (eqPos == -1) {
+		result[keyvals[i]] = true;
+	    } else {
+		result[keyvals[i].substr(0, eqPos)] = keyvals[i].substr(eqPos + 1);
+	    }
+	}
+    }
+    return result;
+};
+
+function unparse_qs(params) {
+    result = [];
+    for (var key in params) {
+	result.push(key + "=" + params[key]);
+    }
+    return result.join("&");
 };
 
 function encode_utf8(s) {
@@ -105,23 +143,64 @@ function formatHttpHeadersAndBody(lineList, headers, body) {
     return lineList.join("\r\n");
 }
 
-function HttpRelay(method, url, headers, body, ajaxOptions) {
+function HttpRelay(method, url, headers, body, options) {
+    var $elf = this;
+
     this.method = method;
     this.url = new Url(url);
     this.headers = Object.extend({}, headers);
     this.headers["Host"] = this.url.getHostPort();
     this.body = body;
+    this.response = null;
 
-    var o = Object.extend({}, ajaxOptions);
+    this.options = {
+	onComplete: null,
+	onError: null,
+	asynchronous: true,
+	ajaxOptions: {}
+    };
+    Object.extend(this.options, options || {});
+
+    var o = Object.extend({}, this.options.ajaxOptions);
     Object.extend(o, { method: "post",
 		       contentType: "message/http",
-		       postBody: this.toString() });
+		       postBody: this.toString(),
+		       asynchronous: this.options.asynchronous,
+		       onComplete: function (transport) { $elf.handleCompletion(transport); }
+		     });
     this.request = new Ajax.Request(ReverseHttpAccessPoint + "/_relay/"+this.url.getHostPort(), o);
 }
 
+HttpRelay.prototype.handleCompletion = function (transport) {
+    var status = transport.status;
+    if ((status >= 200 && status < 300) ||
+	(status == 1223 /* MSIE returns this sometimes instead of 204! */)) {
+	this.response = parseHttpResponse(transport.responseText);
+	if (this.options.onComplete) this.options.onComplete(this.response, this, status);
+    } else {
+	if (this.options.onError) this.options.onError(null, this, status);
+    }
+};
+
+HttpRelay.prototype.isOk = function () {
+    if (!this.response) return null;
+    var status = this.response.status;
+    return ((status >= 200 && status < 300) ||
+	    (status == 1223 /* MSIE returns this sometimes instead of 204! */));
+};
+
 HttpRelay.prototype.toString = function () {
+    var h;
+    if (this.url.username == null) {
+	h = this.headers;
+    } else {
+	throw "Unimplemented -- need base64 support for authentication";
+	h = Object.extend({"Authorization":
+			     "Basic " + b64enc(this.url.username + ":" + this.url.password)
+			  }, this.headers);
+    }
     return formatHttpHeadersAndBody([this.method + " " + this.url.getPathQuery() + " HTTP/1.0"],
-				    this.headers,
+				    h,
 				    this.body);
 };
 

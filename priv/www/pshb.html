@@ -1,0 +1,69 @@
+<html>
+  <head>
+    <title>PubSubHubBub Driver</title>
+    <link type="text/css" rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="prototype-1.6.0.2.js"></script>
+    <script type="text/javascript" src="httpd.js"></script>
+    <script type="text/javascript" src="messaging.js"></script>
+    <script type="text/javascript" src="demolog.js"></script>
+    <script type="text/javascript" src="pshb.js"></script>
+  </head>
+  <body>
+    <div id="outerContainer">
+      <div id="innerContainer">
+	<h1>PubSubHubBub Driver</h1>
+	<h2>Subscription</h2>
+	<table>
+	  <tr>
+	    <th>Topic</th>
+	    <td><input id="sub_topic" size="60" type="text" value="foo"/></td>
+	  </tr>
+	  <tr>
+	    <th>Source</th>
+	    <td><input id="source_url" size="60" type="text" value="http://localhost:8001/subscribe/x/amq.direct"/></td>
+	  </tr>
+	  <tr>
+	    <th>Sink</th>
+	    <td><input id="sink_url" size="60" type="text" value="http://localhost:8000/sub/ep"/></td>
+	  </tr>
+	  <tr>
+	    <td colspan="2">
+	      <input id="token_generation_required" type="checkbox" checked="checked"/>
+	      <label for="token_generation_required">Generate token?</label>
+	    </td>
+	  </tr>
+	  <tr>
+	    <th>Token</th>
+	    <td><input id="sink_token" size="60" type="text" value=""/></td>
+	  </tr>
+	</table>
+	<p>
+	  <button onclick="sub_clicked()">Subscribe</button>
+	  <button onclick="unsub_clicked()">Unsubscribe</button>
+	</p>
+	<h2>Injection</h2>
+	<table>
+	  <tr>
+	    <th>Topic</th>
+	    <td><input id="pub_topic" size="60" type="text" value="foo"/></td>
+	  </tr>
+	  <tr>
+	    <th>Target</th>
+	    <td><input id="target_url" size="60" type="text" value="http://localhost:8001/endpoint/x/amq.direct"/></td>
+	  </tr>
+	  <tr>
+	    <td colspan="2">
+	      Message:<br/>
+	      <textarea id="pub_message"></textarea>
+	    </td>
+	  </tr>
+	</table>
+	<p>
+	  <button onclick="send_clicked()">Send</button>
+	</p>
+	<pre id="logOutput"></pre>
+	<script type="text/javascript">pshb_main();</script>
+      </div>
+    </div>
+  </body>
+</html>

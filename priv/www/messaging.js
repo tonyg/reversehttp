@@ -1,330 +1,229 @@
 var Messaging = {};
 
-Messaging._nameToAddress = function (name) {
-    var r = name.match(/^(([^@]+)@)?([^@]+)/);
-    if (!r) {
-	throw {error: "name_invalid", name: name};
-    }
-    return "http://" + r[3] + "/" + (r[2] || "");
-};
-
-Messaging.Message = function(sender, target, body, contentType, method) {
-    this.sender = sender;
-    this.target = target;
-    this.body = body;
-    this.contentType = contentType || "text/plain";
-    this.method = method || "send";
-};
-
-Messaging.Message.prototype.retarget = function (sender, target) {
-    return new Messaging.Message(sender, target, this.body, this.contentType, this.method);
-};
-
-Messaging.Message.prototype.deliver = function (options) {
+Messaging.Server = function (delegationLabel, options) {
     var $elf = this;
 
     var o = {
-	onComplete: null,
-	onRetry: null,
-	onAborted: null,
-	username: null,
-	password: null,
-	initialFailureDelay: 2000,
-	failureDelayLimit: 30000,
-	maxAttemptCount: 3,
-	failureDelayMultiplier: 2
+	serverOptions: {},
+	onLocationChanged: function () {}
     };
     Object.extend(o, options || {});
 
-    var address = Messaging._nameToAddress(this.target);
-    var attemptCount = 0;
-    var errorReports = [];
-    var failureDelay = o.initialFailureDelay;
-
-    var headers = {'Content-type': this.contentType};
-    if (this.sender) {
-	headers['x-smqp-sender'] = this.sender;
-    }
-    if (this.method) {
-	headers['x-smqp-method'] = this.method;
-    }
-
-    var requestOptions = (o.onComplete || o.onAborted) ? {onComplete: handleCompletion} : null;
-
-    function failNow() {
-	if (o.onAborted) {
-	    o.onAborted(this, options, errorReports);
-	}
-    }
-
-    function attemptDelivery() {
-	if (attemptCount >= o.maxAttemptCount) {
-	    failNow();
-	} else {
-	    attemptCount++;
-	    new HttpRelay("POST", address, headers, $elf.body, requestOptions);
-	}
-    }
-
-    function retryDelivery() {
-	if (o.onRetry) {
-	    o.onRetry(this, options, errorReports);
-	}
-	attemptDelivery();
-    }
-
-    function handleCompletion(req) {
-	if (req.status == 200) {
-	    var resp = parseHttpResponse(req.responseText);
-	    if (resp.status >= 200 && resp.status < 300) {
-		if (o.onComplete) {
-		    o.onComplete(this, options, errorReports);
-		}
-	    } else {
-		handleFailure({status: resp.status, relay: req, response: resp});
-	    }
-	} else {
-	    handleFailure({status: req.status, relay: req, response: null});
-	}
-    }
-
-    function handleFailure(report) {
-	errorReports.push(report);
-	if (report.status >= 500 && report.status < 600) {
-	    setTimeout(retryDelivery, failureDelay);
-	    if (failureDelay < o.failureDelayLimit) {
-		failureDelay = failureDelay * o.failureDelayMultiplier;
-	    }
-	} else {
-	    failNow();
-	}
-    }
-
-    attemptDelivery(0);
-};
-
-Messaging.Server = function (vhostPrefix, options) {
-    var $elf = this;
-
-    var o = {
-	baseUrl: window.location,
-	onInvalidName: null,
-	serverOptions: {}
-    };
-    Object.extend(o, options || {});
-
-    this.listenAddress = new Url(o.baseUrl);
-    this.listenAddress.host = vhostPrefix + "." + this.listenAddress.host;
-    this.host = this.listenAddress.getHostPort();
-
-    this.onInvalidName = o.onInvalidName;
+    this.delegationLabel = delegationLabel;
+    this.onLocationChanged = o.onLocationChanged;
     this.serverOptions = o.serverOptions;
+
+    o.serverOptions.onLocationChanged = function (locationText) {
+	$elf.locationChanged(locationText);
+	$elf.onLocationChanged(locationText, $elf);
+    };
 
     function respondTo(httpReq) { return $elf.respondTo(httpReq); }
 
     this.pathMap = {};
-    this.server = new HttpServer(vhostPrefix, respondTo, o.serverOptions);
+    this.server = new HttpServer(delegationLabel, respondTo, o.serverOptions);
 };
 
 Messaging.Server.prototype.stop = function () {
     this.server.stop();
 };
 
-Messaging.Server.prototype.expandLocalname = function (localName) {
-    return localName ? localName + "@" + this.host : this.host;
+Messaging.Server.prototype.locationChanged = function (locationText) {
+    this.location = new Url(locationText);
+    this.pathPrefix = this.location.pathname;
 };
 
 Messaging.Server.prototype.respondTo = function (httpReq) {
-    var targetLocalname = httpReq.rawPath.substring(1);
-    var target = this.expandLocalname(targetLocalname);
-    var sender = httpReq.headers["x-smqp-sender"] || null;
-    var contentType = httpReq.headers["content-type"] || null;
-    var method = httpReq.headers["x-smqp-method"] || "send";
-    var m = new Messaging.Message(sender, target, httpReq.body, contentType, method);
-
-    function k(status) {
-	httpReq.respond(status, Messaging.StatusMessages[status] || "Unknown", {}, "");
+    function k(status, body, contentType) {
+	var msg = Messaging.StatusMessages[status] || "Unknown";
+	if (status == 204) {
+	    httpReq.respond(status, msg,
+			    {}, "");
+	} else {
+	    httpReq.respond(status, msg,
+			    {"Content-type": (contentType || "text/plain")}, body || msg);
+	}
     }
 
+    if (httpReq.rawPath.substr(0, this.pathPrefix.length) != this.pathPrefix) {
+	k(404, "Destination not found");
+	return;
+    }
+
+    var reqUrl = new Url(httpReq.rawPath.substr(this.pathPrefix.length));
+
+    var slashPos = reqUrl.pathname.indexOf('/');
+    var target;
+    var remainder;
+    if (slashPos == -1) {
+	target = reqUrl.pathname;
+	remainder = '';
+    } else {
+	target = reqUrl.pathname.substr(0, slashPos);
+	remainder = reqUrl.pathname.substr(slashPos + 1);
+    }
+
+    var params = parse_qs(reqUrl.querystring);
+
     try {
-	if (this.pathMap[targetLocalname]) {
-	    this.pathMap[targetLocalname][method](m, k);
-	} else {
-	    if (this.onInvalidName) {
-		status = this.onInvalidName[method](m, k);
+	if (this.pathMap[target]) {
+	    var recipient = this.pathMap[target];
+	    if (recipient[httpReq.method]) {
+		recipient[httpReq.method](httpReq, remainder, params, k);
 	    } else {
-		k(404);
+		if (recipient.FALLBACK) {
+		    recipient.FALLBACK(httpReq, remainder, params, k);
+		} else {
+		    k(501);
+		}
 	    }
+	} else {
+	    k(404);
 	}
     } catch (e) {
 	k(500);
     }
 };
 
-Messaging.Server.prototype.extractLocalname = function (name) {
-    var suffixLength = this.host.length + 1;
-    var prefixLength = name.length - suffixLength;
-    if (name.substring(prefixLength) == ("@" + this.host)) {
-	return name.substring(0, prefixLength);
-    } else {
-	throw {error: "invalid_application_name", name: name, host: this.host};
-    }
-};
-
 Messaging.Server.prototype.bindName = function (name, receiver) {
-    this.pathMap[this.extractLocalname(name)] = receiver;
+    this.pathMap[name] = receiver;
 };
 
 Messaging.Server.prototype.unbindName = function (name) {
-    delete this.pathMap[this.extractLocalname(name)];
+    delete this.pathMap[name];
 };
 
 Messaging.StatusMessages = {
     200: "OK",
+    204: "OK",
+    400: "Invalid request",
+    403: "Forbidden",
     404: "Destination not found",
-    500: "Internal messaging server error"
+    500: "Internal messaging server error",
+    501: "Unsupported method"
 };
 
-Messaging.Relay = function (options) {
-    this.options = Object.extend({
-				     vetSubscriber: null,
-				     onSubscriberAdded: null,
-				     onSubscriberRemoved: null,
-				     onDeliveryFailure: null,
-				     checkDeliveryAcceptance: null
-				 }, options);
-    this.subscribers = {};
-};
-
-Messaging.Relay.prototype.getCallback = function (name, defaultValue) {
-    return this.options[name] || defaultValue;
-};
-
-Messaging.Relay.prototype.invokeCallback = function (name, args, defaultValue) {
-    if (this.options[name]) {
-	try {
-	    return this.options[name].apply(this, args);
-	} catch (e) {
-	    return defaultValue;
-	}
+Messaging.HubModeDispatch = function (httpReq, path, params, k) {
+    var hubMode = params['hub.mode'] || "";
+    var mname = httpReq.method + '_' + hubMode;
+    if (this[mname]) {
+	this[mname](httpReq, path, params, k);
     } else {
-	return defaultValue;
+	k(501);
     }
 };
 
-Messaging.Relay.prototype.addSubscriber = function (name, filter) {
-    if (!this.invokeCallback("vetSubscriber", [name, filter], true)) {
+Messaging.EndpointFacet = function (sink) {
+    this.sink = sink;
+};
+
+Messaging.EndpointFacet.MaxAge = 300; // seconds
+
+Messaging.EndpointFacet.prototype.FALLBACK = Messaging.HubModeDispatch;
+
+Messaging.EndpointFacet.prototype.generate_token = function (path, intendedUse) {
+    return (new Number(new Date())) + ":" + intendedUse + ":" + path;
+};
+
+Messaging.EndpointFacet.prototype.check_token = function (token, path, actualUse) {
+    var m = token.match(/^([0-9]+):([^:]+):(.*)/);
+    if (!m) return false;
+    var tokenTime = Number(m[1]);
+    if (((new Number(new Date())) - tokenTime) > (Messaging.EndpointFacet.MaxAge * 1000)) {
 	return false;
     }
-    this.subscribers[name] = filter;
-    this.invokeCallback("onSubscriberAdded", [name, filter]);
-    return true;
+    if (actualUse != m[2]) return false;
+    if (path != m[3]) return false;
+    return this.sink.check_action(actualUse, path);
 };
 
-Messaging.Relay.prototype.removeSubscriber = function (name) {
-    delete this.subscribers[name];
-    this.invokeCallback("onSubscriberRemoved", [name]);
-};
-
-Messaging.Relay.prototype.matchingSubscribers = function (message) {
-    var result = {};
-
-    for (var name in this.subscribers) {
-	var filter = this.subscribers[name];
-	if (filter(message)) {
-	    result[name] = filter;
+Messaging.EndpointFacet.prototype.check_http_token =
+    function (httpReq, path, params, k, actualUse) {
+	if (this.check_token(params['hub.verify_token'] || "", path, actualUse)) {
+	    k(204);
+	} else {
+	    k(400);
 	}
-    }
-
-    return result;
-};
-
-Messaging.Relay.prototype.decodeFilter = function (spec) {
-    return this.defaultFilter(); // TODO -- simple filter language?
-};
-
-Messaging.Relay.prototype.defaultFilter = function () {
-    return function (m) { return true; };
-};
-
-Messaging.jsonRequest = function (sender, target, method, body) {
-    return new Messaging.Message(sender, target, Object.toJSON(body), "application/json", method);
-};
-
-Messaging.jsonHandler = function (handler) {
-    return function (message, k) {
-	handler(message.body.evalJSON(), message);
-	k(200);
     };
+
+Messaging.EndpointFacet.prototype.get_ = function (httpReq, path, params, k) {
+    k(200, "Endpoint facet");
 };
 
-Messaging.Relay.prototype.getMessageHandler = function () {
-    var $elf = this;
-    return {
-	send: function (message, k) { $elf.acceptMessage(message, k); },
-	subscribe: Messaging.jsonHandler(function (args) {
-					     var f = args.filter
-						 ? $elf.decodeFilter(args.filter)
-						 : $elf.defaultFilter();
-					     $elf.addSubscriber(args.name, f);
-					 }),
-	unsubscribe: Messaging.jsonHandler(function (args) {
-					       $elf.removeSubscriber(args.name);
-					   })
-    };
+Messaging.EndpointFacet.prototype.get_subscribe = function (httpReq, path, params, k) {
+    this.check_http_token(httpReq, path, params, k, "subscribe");
 };
 
-Messaging.Relay.prototype.acceptMessage = function (message, k) {
-    var subs = this.matchingSubscribers(message);
-    this.deliver(message, subs, k);
+Messaging.EndpointFacet.prototype.get_unsubscribe = function (httpReq, path, params, k) {
+    this.check_http_token(httpReq, path, params, k, "unsubscribe");
 };
 
-Messaging.Relay.prototype.deliver = function (message, subs, k) {
-    var $elf = this;
+Messaging.EndpointFacet.prototype.get_generate_token = function (httpReq, path, params, k) {
+    var token = this.generate_token(path, params['hub.intended_use']);
+    k(200, "hub.verify_token=" + token, "application/x-www-form-urlencoded");
+};
 
-    var completeCount = 0;
-    var abortedCount = 0;
-    var totalCount = 0;
-    var continuationFired = false;
+Messaging.EndpointFacet.prototype.post = function (httpReq, path, params, k) {
+    this.sink.deliver(params['hub.topic'] || '',
+		      httpReq.headers['content-type'],
+		      httpReq.body);
+    k(204);
+};
 
-    function ok() {
-	completeCount++;
-	checkCompletion();
-    }
+Messaging.HubModeRequest = function (url, method, mode, params) {
+    var qs = unparse_qs(params);
+    return new HttpRelay(method,
+			 url + "?hub.mode=" + mode + (qs ? "&"+qs : ""),
+			 {},
+			 "",
+			 {asynchronous: false});
+};
 
-    function fail(sub) {
-	return function (m, deliveryOptions, errorReports) {
-	    $elf.invokeCallback("onDeliveryFailure", [message, sub, errorReports]);
-	    $elf.removeSubscriber(sub);
-	    abortedCount++;
-	    checkCompletion();
-	};
-    }
+Messaging.RemoteEndpoint = function (url) {
+    this.url = url;
+};
 
-    function defaultCheckDeliveryAcceptance(completeCount, abortedCount, totalCount) {
-	if ((totalCount == 0) || (completeCount > 0)) { return 200; }
-	if (abortedCount == totalCount) { return 200; /* absorb failures */ }
-	return null;
-    }
+Messaging.RemoteEndpoint.prototype.generate_token = function (intended_use) {
+    var r = Messaging.HubModeRequest(this.url, "GET", "generate_token",
+				     {"hub.intended_use": intended_use});
+    if (!r.isOk()) return null;
+    var m = r.response.body.match(/^hub\.verify_token=(.*)$/);
+    if (!m) return null;
+    return m[1];
+};
 
-    function checkCompletion() {
-	if (continuationFired) {
-	    return;
-	}
+Messaging.RemoteEndpoint.prototype.check_token = function (token, actual_use) {
+    var r = Messaging.HubModeRequest(this.url, "GET", actual_use,
+				     {"hub.verify_token": token});
+    return r.isOk();
+};
 
-	var checker =
-	    $elf.getCallback("checkDeliveryAcceptance", defaultCheckDeliveryAcceptance);
-	var completionStatus = checker(completeCount, abortedCount, totalCount);
-	if (completionStatus) {
-	    k(completionStatus);
-	    continuationFired = true;
-	}
-    }
+Messaging.RemoteEndpoint.prototype.deliver = function (topic, body, contentType) {
+    var r = new HttpRelay("POST", this.url + "?hub.topic=" + topic,
+			  contentType ? {"Content-type": contentType} : {},
+			  body,
+			  {asynchronous: false});
+    return r.isOk();
+};
 
-    for (var sub in subs) { totalCount++; }
-    for (var sub in subs) {
-	message.retarget(message.target, sub).deliver({ onComplete: ok,
-							onAborted: fail(sub) });
-    }
-    checkCompletion();
+Messaging.RemoteSource = function (url) {
+    this.url = url;
+};
+
+Messaging.RemoteSource.prototype.subscribe = function (callbackUrl, topic, verifyModes, token) {
+    var r = Messaging.HubModeRequest(this.url, "POST", "subscribe",
+				     {"hub.callback": callbackUrl,
+				      "hub.topic": topic,
+				      "hub.verify": verifyModes.join(","),
+				      "hub.verify_token": token});
+    return r.isOk();
+};
+
+Messaging.RemoteSource.prototype.unsubscribe = function (callbackUrl, topic, verifyModes, token) {
+    var r = Messaging.HubModeRequest(this.url, "POST", "unsubscribe",
+				     {"hub.callback": callbackUrl,
+				      "hub.topic": topic,
+				      "hub.verify": verifyModes.join(","),
+				      "hub.verify_token": token});
+    return r.isOk();
 };
