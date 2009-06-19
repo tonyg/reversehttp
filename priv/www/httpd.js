@@ -16,7 +16,11 @@ function Url(maybeStr) {
 	    r = maybeStr.toString().match(Url.regex);
 	    if (!r) throw {error: "url_invalid", url: maybeStr};
 	} else {
-	    r = [null, null, null, null, null, null, null, null, null, null, null, null];
+	    r = [null, null, null, null,
+		 null, null, null, null,
+		 null, null, null, null,
+		 null, null, null, null,
+		 null];
 	}
 
 	this.url = r[0];
@@ -26,15 +30,15 @@ function Url(maybeStr) {
 	this.host = r[8] || "";
 	this.port = r[10];
 	this.pathname = r[11] || "";
-	this.querystring = r[13] || "";
-	this.fragment = r[15] || "";
+	this.querystring = r[14] || "";
+	this.fragment = r[16] || "";
     }
 }
 
 Url.regex = 
-/*12       3    45     6 7         8          9 A        B                    C  D        E F   */
-/* proto         user    pass      host         port     path                    query      frag */
-/^((\w+):)?(\/\/((\w+)?(:(\w+))?@)?([^\/\?:]+)(:(\d+))?)?(\/?[^\/\?#][^\?#]*)?(\?([^#]+))?(#(\w*))?/;
+/*12       3    45     6 7         8          9 A        B   C                   D  E        F 0   */
+/* proto         user    pass      host         port     path                       query      frag */
+/^((\w+):)?(\/\/((\w+)?(:(\w+))?@)?([^\/\?:]+)(:(\d+))?)?(\/?([^\/\?#][^\?#]*)?)?(\?([^#]+))?(#(\w*))?/;
 
 Url.prototype.getHostPort = function () {
     return this.host + (this.port ? ":" + this.port : "");
