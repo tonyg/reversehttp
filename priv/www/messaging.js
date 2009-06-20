@@ -170,60 +170,65 @@ Messaging.EndpointFacet.prototype.post = function (httpReq, path, params, k) {
     k(204);
 };
 
-Messaging.HubModeRequest = function (url, method, mode, params) {
+Messaging.HubModeRequest = function (url, method, mode, params, k) {
     var qs = unparse_qs(params);
     return new HttpRelay(method,
 			 url + "?hub.mode=" + mode + (qs ? "&"+qs : ""),
 			 {},
 			 "",
-			 {asynchronous: false});
+			 {onComplete: k,
+			  onError: k});
 };
 
 Messaging.RemoteEndpoint = function (url) {
     this.url = url;
 };
 
-Messaging.RemoteEndpoint.prototype.generate_token = function (intended_use) {
-    var r = Messaging.HubModeRequest(this.url, "GET", "generate_token",
-				     {"hub.intended_use": intended_use});
-    if (!r.isOk()) return null;
-    var m = r.response.body.match(/^hub\.verify_token=(.*)$/);
-    if (!m) return null;
-    return m[1];
+Messaging.RemoteEndpoint.prototype.generate_token = function (intended_use, k) {
+    Messaging.HubModeRequest(this.url, "GET", "generate_token",
+			     {"hub.intended_use": intended_use},
+			     function (reply) {
+				 if (!reply) return k(null);
+				 var m = reply.body.match(/^hub\.verify_token=(.*)$/);
+				 if (!m) return k(null);
+				 return k(m[1]);
+			     });
 };
 
-Messaging.RemoteEndpoint.prototype.check_token = function (token, actual_use) {
-    var r = Messaging.HubModeRequest(this.url, "GET", actual_use,
-				     {"hub.verify_token": token});
-    return r.isOk();
+Messaging.RemoteEndpoint.prototype.check_token = function (token, actual_use, k) {
+    Messaging.HubModeRequest(this.url, "GET", actual_use,
+			     {"hub.verify_token": token},
+			     function (reply) { return k(reply != null); });
 };
 
-Messaging.RemoteEndpoint.prototype.deliver = function (topic, body, contentType) {
-    var r = new HttpRelay("POST", this.url + "?hub.topic=" + topic,
-			  contentType ? {"Content-type": contentType} : {},
-			  body,
-			  {asynchronous: false});
-    return r.isOk();
+Messaging.RemoteEndpoint.prototype.deliver = function (topic, body, contentType, k) {
+    new HttpRelay("POST", this.url + "?hub.topic=" + topic,
+		  contentType ? {"Content-type": contentType} : {},
+		  body,
+		  {onComplete: function () { k(true); },
+		   onError: function () { k(false); }});
 };
 
 Messaging.RemoteSource = function (url) {
     this.url = url;
 };
 
-Messaging.RemoteSource.prototype.subscribe = function (callbackUrl, topic, verifyModes, token) {
-    var r = Messaging.HubModeRequest(this.url, "POST", "subscribe",
-				     {"hub.callback": callbackUrl,
-				      "hub.topic": topic,
-				      "hub.verify": verifyModes.join(","),
-				      "hub.verify_token": token});
-    return r.isOk();
-};
+Messaging.RemoteSource.prototype.subscribe =
+    function (callbackUrl, topic, verifyModes, token, k) {
+	Messaging.HubModeRequest(this.url, "POST", "subscribe",
+				 {"hub.callback": callbackUrl,
+				  "hub.topic": topic,
+				  "hub.verify": verifyModes.join(","),
+				  "hub.verify_token": token},
+				 function (reply) { return k(reply != null); });
+    };
 
-Messaging.RemoteSource.prototype.unsubscribe = function (callbackUrl, topic, verifyModes, token) {
-    var r = Messaging.HubModeRequest(this.url, "POST", "unsubscribe",
-				     {"hub.callback": callbackUrl,
-				      "hub.topic": topic,
-				      "hub.verify": verifyModes.join(","),
-				      "hub.verify_token": token});
-    return r.isOk();
-};
+Messaging.RemoteSource.prototype.unsubscribe =
+    function (callbackUrl, topic, verifyModes, token, k) {
+	Messaging.HubModeRequest(this.url, "POST", "unsubscribe",
+				 {"hub.callback": callbackUrl,
+				  "hub.topic": topic,
+				  "hub.verify": verifyModes.join(","),
+				  "hub.verify_token": token},
+				 function (reply) { return k(reply != null); });
+    };
