@@ -110,6 +110,18 @@ function parseHttpHeadersAndBody(o, sourceText) {
 
 var ReverseHttpAccessPoint = "/reversehttp";
 
+function switchAccessPoint(accessPointUrl, installXPConnect) {
+    ReverseHttpAccessPoint = accessPointUrl;
+    if ((document.domain === "" && installXPConnect !== false) || installXPConnect === true) {
+	CrossSiteAjaxContext = function (f) {
+	    if (window.netscape) {
+		netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+	    }
+	    return f();
+	};
+    }
+}
+
 function HttpRequest(replyUrl, sourceText) {
     this.replyUrl = replyUrl;
     var tmp = sourceText.match(/([^ ]+) ([^ ]+) HTTP\/([0-9]+\.[0-9]+)\r\n/);
