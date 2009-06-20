@@ -2,11 +2,12 @@ var msgServer;
 
 function endpoint_main() {
     function updateLocation(locationText) {
-        $("endpointLocation").href = locationText;
-        $("endpointLocation").innerHTML = locationText;
+	var u = locationText + "ep";
+        $("endpointLocation").href = u;
+        $("endpointLocation").innerHTML = u;
     }
 
-    var subName = "sub";// + Math.round(Math.random() * 100000);
+    var subName = "sub" + Math.round(Math.random() * 100000);
     msgServer = new Messaging.Server(subName, {serverOptions: {debug: log},
                                                onLocationChanged: updateLocation});
 
