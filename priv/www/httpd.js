@@ -120,17 +120,26 @@ function HttpRequest(replyUrl, sourceText) {
     this.responseSent = false;
 }
 
+// No special action by default.
+CrossSiteAjaxContext = function (f) { return f(); };
+
 HttpRequest.prototype.respond = function (status, text, headers, body) {
+    var $elf = this;
+
     if (this.responseSent) {
 	return;
     }
 
     var r = new HttpResponse(status, text, headers, body, this.httpVersion);
-    new Ajax.Request(this.replyUrl,
-		     { method: "post",
-		       contentType: "message/http",
-		       postBody: r.toString() });
-    this.responseSent = true;
+
+    CrossSiteAjaxContext(
+	function () {
+	    new Ajax.Request($elf.replyUrl,
+			     { method: "post",
+			       contentType: "message/http",
+			       postBody: r.toString() });
+	    $elf.responseSent = true;
+	});
 };
 
 function formatHttpHeadersAndBody(lineList, headers, body) {
@@ -172,7 +181,12 @@ function HttpRelay(method, url, headers, body, options) {
 		       asynchronous: this.options.asynchronous,
 		       onComplete: function (transport) { $elf.handleCompletion(transport); }
 		     });
-    this.request = new Ajax.Request(ReverseHttpAccessPoint + "/_relay/"+this.url.getHostPort(), o);
+
+    CrossSiteAjaxContext(
+	function () {
+	    $elf.request = new Ajax.Request(ReverseHttpAccessPoint +
+					    "/_relay/"+$elf.url.getHostPort(), o);
+	});
 }
 
 HttpRelay.prototype.handleCompletion = function (transport) {
@@ -341,18 +355,21 @@ HttpServer.prototype.serve = function () {
     $elf.repeatWithBackoff(requestBuilder, responseHandler);
 
     function requestBuilder(receiveReply) {
-	if (declareMode) {
-	    return new Ajax.Request(ReverseHttpAccessPoint,
-				    { method: "post",
-				      onComplete: receiveReply,
-				      parameters: {"name": $elf.label,
-						   "token": $elf.options.token} });
-	} else {
-	    return new Ajax.Request($elf.nextReq,
-				    { method: "get",
-				      requestHeaders: ['Accept', 'message/http'],
-				      onComplete: receiveReply });
-	}
+	CrossSiteAjaxContext(
+	    function () {
+		if (declareMode) {
+		    return new Ajax.Request(ReverseHttpAccessPoint,
+					    { method: "post",
+					      onComplete: receiveReply,
+					      parameters: {"name": $elf.label,
+							   "token": $elf.options.token} });
+		} else {
+		    return new Ajax.Request($elf.nextReq,
+					    { method: "get",
+					      requestHeaders: ['Accept', 'message/http'],
+					      onComplete: receiveReply });
+		}
+	    });
     }
 
     function responseHandler(ajaxRequest) {
