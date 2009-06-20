@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>The Tiniest Reverse HTTP Demo</title>
-    <script type="text/javascript" src="prototype-1.6.0.2.js"></script>
+    <script type="text/javascript" src="jquery-1.3.2.js"></script>
     <script type="text/javascript" src="httpd.js"></script>
   </head>
   <body>
@@ -11,7 +11,7 @@
       new HttpServer("tiniestdemo",
 		     function (req) {
 		       req.respond(200, "OK", {"Content-type": "text/plain; charset=utf-8"},
-				   $("responsetext").value);
+				   $("#responsetext").attr("value"));
 		     });
     </script>
   </body>

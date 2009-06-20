@@ -7,14 +7,14 @@ function unsub_clicked() {
 }
 
 function sub_or_unsub(verb) {
-    var s = new Messaging.RemoteSource($("source_url").value);
+    var s = new Messaging.RemoteSource($("#source_url").attr("value"));
 
-    if ($("token_generation_required").checked) {
-	var e = new Messaging.RemoteEndpoint($("sink_url").value);
+    if ($("#token_generation_required").attr("checked")) {
+	var e = new Messaging.RemoteEndpoint($("#sink_url").attr("value"));
 	log("Generating token...");
 	e.generate_token(verb, function (t) {
 			     log("Generated token: " + t);
-			     $("sink_token").value = t || "";
+			     $("#sink_token").attr("value", t || "");
 			     if (t) k();
 			 });
     } else {
@@ -22,8 +22,10 @@ function sub_or_unsub(verb) {
     }
 
     function k() {
-	s[verb]($("sink_url").value, $("sub_topic").value, ["sync", "async"],
-		$("sink_token").value,
+	s[verb]($("#sink_url").attr("value"),
+		$("#sub_topic").attr("value"),
+		["sync", "async"],
+		$("#sink_token").attr("value"),
 		function (result) {
 		    log("Action '" + verb + "' result: " + result);
 		});
@@ -31,8 +33,8 @@ function sub_or_unsub(verb) {
 }
 
 function send_clicked() {
-    var e = new Messaging.RemoteEndpoint($("target_url").value);
-    e.deliver($("pub_topic").value, $("pub_message").value, "text/plain",
+    var e = new Messaging.RemoteEndpoint($("#target_url").attr("value"));
+    e.deliver($("#pub_topic").attr("value"), $("#pub_message").attr("value"), "text/plain",
 	      function (result) {
 		  log("Send attempt result: " + result);
 	      });

@@ -1,12 +1,10 @@
 var msgServer;
 
-if (!document.domain) switchAccessPoint("http://www.reversehttp.net/reversehttp");
-
 function endpoint_main() {
     function updateLocation(locationText) {
 	var u = locationText + "ep";
-        $("endpointLocation").href = u;
-        $("endpointLocation").innerHTML = u;
+        $("#endpointLocation").attr("href", u);
+        $("#endpointLocation").text(u);
     }
 
     var subName = "sub" + Math.round(Math.random() * 100000);

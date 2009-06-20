@@ -146,10 +146,10 @@ HttpRequest.prototype.respond = function (status, text, headers, body) {
 
     CrossSiteAjaxContext(
 	function () {
-	    new Ajax.Request($elf.replyUrl,
-			     { method: "post",
-			       contentType: "message/http",
-			       postBody: r.toString() });
+	    jQuery.ajax({ url: $elf.replyUrl,
+			  type: "POST",
+			  data: r.toString(),
+			  contentType: "message/http" });
 	    $elf.responseSent = true;
 	});
 };
@@ -173,7 +173,7 @@ function HttpRelay(method, url, headers, body, options) {
 
     this.method = method;
     this.url = new Url(url);
-    this.headers = Object.extend({}, headers);
+    this.headers = jQuery.extend({}, headers);
     this.headers["Host"] = this.url.getHostPort();
     this.body = body;
     this.response = null;
@@ -181,23 +181,23 @@ function HttpRelay(method, url, headers, body, options) {
     this.options = {
 	onComplete: null,
 	onError: null,
-	asynchronous: true,
+	async: true,
 	ajaxOptions: {}
     };
-    Object.extend(this.options, options || {});
+    jQuery.extend(this.options, options || {});
 
-    var o = Object.extend({}, this.options.ajaxOptions);
-    Object.extend(o, { method: "post",
+    var o = jQuery.extend({}, this.options.ajaxOptions);
+    jQuery.extend(o, { url: ReverseHttpAccessPoint + "/_relay/"+$elf.url.getHostPort(),
+		       type: "POST",
 		       contentType: "message/http",
-		       postBody: this.toString(),
-		       asynchronous: this.options.asynchronous,
-		       onComplete: function (transport) { $elf.handleCompletion(transport); }
+		       data: this.toString(),
+		       async: this.options.async,
+		       complete: function (transport) { $elf.handleCompletion(transport); }
 		     });
 
     CrossSiteAjaxContext(
 	function () {
-	    $elf.request = new Ajax.Request(ReverseHttpAccessPoint +
-					    "/_relay/"+$elf.url.getHostPort(), o);
+	    $elf.request = jQuery.ajax(o);
 	});
 }
 
@@ -225,7 +225,7 @@ HttpRelay.prototype.toString = function () {
 	h = this.headers;
     } else {
 	throw "Unimplemented -- need base64 support for authentication";
-	h = Object.extend({"Authorization":
+	h = jQuery.extend({"Authorization":
 			     "Basic " + b64enc(this.url.username + ":" + this.url.password)
 			  }, this.headers);
     }
@@ -299,7 +299,7 @@ function HttpServer(label, callback, options) {
 	log: function () { this.debug.apply(this, arguments); },
 	onLocationChanged: function () {}
     };
-    Object.extend(this.options, options || {});
+    jQuery.extend(this.options, options || {});
 
     this.running = true;
     this.nextReq = null;
@@ -370,16 +370,18 @@ HttpServer.prototype.serve = function () {
 	CrossSiteAjaxContext(
 	    function () {
 		if (declareMode) {
-		    return new Ajax.Request(ReverseHttpAccessPoint,
-					    { method: "post",
-					      onComplete: receiveReply,
-					      parameters: {"name": $elf.label,
-							   "token": $elf.options.token} });
+		    return jQuery.ajax({ url: ReverseHttpAccessPoint,
+					 type: "POST",
+					 complete: receiveReply,
+					 data: {"name": $elf.label,
+						"token": $elf.options.token} });
 		} else {
-		    return new Ajax.Request($elf.nextReq,
-					    { method: "get",
-					      requestHeaders: ['Accept', 'message/http'],
-					      onComplete: receiveReply });
+		    return jQuery.ajax({ url: $elf.nextReq,
+					 type: "GET",
+					 beforeSend: function (xhr) {
+					     xhr.setRequestHeader('Accept', 'message/http');
+					 },
+					 complete: receiveReply });
 		}
 	    });
     }
@@ -414,7 +416,7 @@ HttpServer.prototype.serve = function () {
 		}
 	    }
 	}
-	if (Prototype.Browser.IE) {
+	if (jQuery.browser.msie) {
 	    // IE's stack runs out when things are busy if we don't do this.
 	    setTimeout(function () { $elf.serve(); }, 0);
 	} else {

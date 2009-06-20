@@ -2,7 +2,7 @@
   <head>
     <title>The Tiny Reverse HTTP Demo</title>
     <link type="text/css" rel="stylesheet" href="style.css">
-    <script type="text/javascript" src="prototype-1.6.0.2.js"></script>
+    <script type="text/javascript" src="jquery-1.3.2.js"></script>
     <script type="text/javascript" src="httpd.js"></script>
   </head>
   <body>
@@ -18,12 +18,12 @@
 	<script type="text/javascript">
 	  new HttpServer("tinydemo",
 	                 function (req) {
-			   var c = Number($("counter").innerHTML) + 1;
+			   var c = Number($("#counter").text()) + 1;
 			   req.respond(200, "OK", {}, "Hello, world! This is response #"+ c);
-			   $("counter").innerHTML = c;
+			   $("#counter").text(c);
 			 },
 			 {onLocationChanged: function (location) {
-			      $("serviceLocation").innerHTML = location;
+			      $("#serviceLocation").text(location);
 			  }});
 	</script>
 	<p>

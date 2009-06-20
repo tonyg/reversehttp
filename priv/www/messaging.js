@@ -7,7 +7,7 @@ Messaging.Server = function (delegationLabel, options) {
 	serverOptions: {},
 	onLocationChanged: function () {}
     };
-    Object.extend(o, options || {});
+    jQuery.extend(o, options || {});
 
     this.delegationLabel = delegationLabel;
     this.onLocationChanged = o.onLocationChanged;

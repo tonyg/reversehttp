@@ -1,13 +1,14 @@
+if (!document.domain) switchAccessPoint("http://www.reversehttp.net/reversehttp");
+
 function log() {
-    $A(arguments).each(function (arg) {
-			   if (typeof(arg) == 'string') {
-			       $("logOutput").appendChild(document.createTextNode(arg + "\r\n"));
-			   } else {
-			       $("logOutput").appendChild(document
-							  .createTextNode(Object.toJSON(arg) +
-									  "\r\n"));
-			   }
-		       });
+    for (var i = 0; i < arguments.length; i++) {
+	var arg = arguments[i];
+	if (typeof(arg) == 'string') {
+	    $("#logOutput").append(document.createTextNode(arg + "\r\n"));
+	} else {
+	    $("#logOutput").append(document.createTextNode(Object.toJSON(arg) + "\r\n"));
+	}
+    }
 }
 
 function formatErrorReports(errorReports) {

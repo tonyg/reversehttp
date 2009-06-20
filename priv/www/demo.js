@@ -1,7 +1,7 @@
 var demoServer = null;
 
 function respondTo(httpReq) {
-    var body = $("replyText").value;
+    var body = $("#replyText").attr("value");
     httpReq.respond(200, "OK", {}, body);
 }
 
@@ -21,12 +21,12 @@ function demoLabel_keypress() {
 
 function demo_main() {
     var initialValue = "demo" + Math.round(Math.random() * 100000);
-    $("demoLabel").value = initialValue;
+    $("#demoLabel").attr("value", initialValue);
     begin_serving();
 }
 
 function begin_serving() {
-    var label = $("demoLabel").value;
+    var label = $("#demoLabel").attr("value");
     if (demoServer == null || demoServer.label != label) {
 	if (demoServer != null) { demoServer.stop(); }
 	demoServer = new HttpServer(label, respondTo, {onLocationChanged: updateLocation,
@@ -34,7 +34,7 @@ function begin_serving() {
     }
 
     function updateLocation(newLoc) {
-	$("demoLabel_link").href = newLoc;
-	$("demoLabel_link").innerHTML = newLoc;
+	$("#demoLabel_link").attr("href", newLoc);
+	$("#demoLabel_link").text(newLoc);
     }
 }
