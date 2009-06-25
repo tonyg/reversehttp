@@ -71,9 +71,10 @@ function parse_qs(qs) {
 	for (var i = 0; i < keyvals.length; i++) {
 	    var eqPos = keyvals[i].indexOf('=');
 	    if (eqPos == -1) {
-		result[keyvals[i]] = true;
+		result[unescape(keyvals[i])] = true;
 	    } else {
-		result[keyvals[i].substr(0, eqPos)] = keyvals[i].substr(eqPos + 1);
+		result[unescape(keyvals[i].substr(0, eqPos))] =
+		    unescape(keyvals[i].substr(eqPos + 1));
 	    }
 	}
     }
@@ -83,7 +84,7 @@ function parse_qs(qs) {
 function unparse_qs(params) {
     result = [];
     for (var key in params) {
-	result.push(key + "=" + params[key]);
+	result.push(escape(key) + "=" + escape(params[key]));
     }
     return result.join("&");
 };
