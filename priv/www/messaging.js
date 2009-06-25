@@ -66,8 +66,8 @@ Messaging.Server.prototype.respondTo = function (httpReq) {
     var params = parse_qs(reqUrl.querystring);
 
     try {
-	if (this.pathMap[target]) {
-	    var recipient = this.pathMap[target];
+	var recipient = this.pathMap[target] || this.pathMap[""];
+	if (recipient) {
 	    if (recipient[httpReq.method]) {
 		recipient[httpReq.method](httpReq, remainder, params, k);
 	    } else {
