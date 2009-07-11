@@ -71,9 +71,10 @@ function parse_qs(qs) {
 	for (var i = 0; i < keyvals.length; i++) {
 	    var eqPos = keyvals[i].indexOf('=');
 	    if (eqPos == -1) {
-		result[keyvals[i]] = true;
+		result[unescape(keyvals[i])] = true;
 	    } else {
-		result[keyvals[i].substr(0, eqPos)] = keyvals[i].substr(eqPos + 1);
+		result[unescape(keyvals[i].substr(0, eqPos))] =
+		    unescape(keyvals[i].substr(eqPos + 1));
 	    }
 	}
     }
@@ -83,7 +84,7 @@ function parse_qs(qs) {
 function unparse_qs(params) {
     result = [];
     for (var key in params) {
-	result.push(key + "=" + params[key]);
+	result.push(escape(key) + "=" + escape(params[key]));
     }
     return result.join("&");
 };
@@ -203,20 +204,12 @@ function HttpRelay(method, url, headers, body, options) {
 
 HttpRelay.prototype.handleCompletion = function (transport) {
     var status = transport.status;
-    if ((status >= 200 && status < 300) ||
-	(status == 1223 /* MSIE returns this sometimes instead of 204! */)) {
+    if (HttpResponse.statusOk(status)) {
 	this.response = parseHttpResponse(transport.responseText);
 	if (this.options.onComplete) this.options.onComplete(this.response, this, status);
     } else {
 	if (this.options.onError) this.options.onError(null, this, status);
     }
-};
-
-HttpRelay.prototype.isOk = function () {
-    if (!this.response) return null;
-    var status = this.response.status;
-    return ((status >= 200 && status < 300) ||
-	    (status == 1223 /* MSIE returns this sometimes instead of 204! */));
 };
 
 HttpRelay.prototype.toString = function () {
@@ -248,6 +241,15 @@ function HttpResponse(status, text, headers, body, httpVersion) {
     this.body = body;
     this.httpVersion = httpVersion || "1.0";
 }
+
+HttpResponse.statusOk = function (status) {
+    return ((status >= 200 && status < 300) ||
+	    (status == 1223 /* MSIE returns this sometimes instead of 204! */));
+};
+
+HttpResponse.prototype.isOk = function () {
+    return HttpResponse.statusOk(this.status);
+};
 
 HttpResponse.prototype.toString = function () {
     return formatHttpHeadersAndBody(["HTTP/" + this.httpVersion + " " +
@@ -339,9 +341,7 @@ HttpServer.prototype.repeatWithBackoff = function (requestBuilder, responseHandl
 	    return;
 	}
 
-	if ((ajaxRequest.status < 200 || ajaxRequest.status >= 300) &&
-	    (ajaxRequest.status != 1223 /* MSIE returns this sometimes instead of 204! */))
-	{
+	if (!HttpResponse.statusOk(ajaxRequest.status)) {
 	    $elf.options.debug("Poll request failed - status " + ajaxRequest.status +
 			       "; delaying " + $elf.failureDelay);
 	    setTimeout(function () { $elf.serve(); }, $elf.failureDelay);

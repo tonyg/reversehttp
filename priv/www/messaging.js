@@ -66,8 +66,12 @@ Messaging.Server.prototype.respondTo = function (httpReq) {
     var params = parse_qs(reqUrl.querystring);
 
     try {
-	if (this.pathMap[target]) {
-	    var recipient = this.pathMap[target];
+	var recipient = this.pathMap[target];
+	if (!recipient) {
+	    recipient = this.pathMap[""];
+	    remainder = reqUrl.pathname;
+	}
+	if (recipient) {
 	    if (recipient[httpReq.method]) {
 		recipient[httpReq.method](httpReq, remainder, params, k);
 	    } else {
@@ -188,7 +192,7 @@ Messaging.RemoteEndpoint.prototype.generate_token = function (intended_use, k) {
     Messaging.HubModeRequest(this.url, "GET", "generate_token",
 			     {"hub.intended_use": intended_use},
 			     function (reply) {
-				 if (!reply) return k(null);
+				 if (!reply || !reply.isOk()) return k(null);
 				 var m = reply.body.match(/^hub\.verify_token=(.*)$/);
 				 if (!m) return k(null);
 				 return k(m[1]);
@@ -197,15 +201,15 @@ Messaging.RemoteEndpoint.prototype.generate_token = function (intended_use, k) {
 
 Messaging.RemoteEndpoint.prototype.check_token = function (token, actual_use, k) {
     Messaging.HubModeRequest(this.url, "GET", actual_use,
-			     {"hub.verify_token": token},
-			     function (reply) { return k(reply != null); });
+			     typeof(token) == "string" ? {"hub.verify_token": token} : {},
+			     function (reply) { return k(reply && reply.isOk()); });
 };
 
 Messaging.RemoteEndpoint.prototype.deliver = function (topic, body, contentType, k) {
     new HttpRelay("POST", this.url + "?hub.topic=" + topic,
 		  contentType ? {"Content-type": contentType} : {},
 		  body,
-		  {onComplete: function () { k(true); },
+		  {onComplete: function (reply) { k(reply.isOk()); },
 		   onError: function () { k(false); }});
 };
 
@@ -220,7 +224,7 @@ Messaging.RemoteSource.prototype.subscribe =
 				  "hub.topic": topic,
 				  "hub.verify": verifyModes.join(","),
 				  "hub.verify_token": token},
-				 function (reply) { return k(reply != null); });
+				 function (reply) { return k(reply && reply.isOk()); });
     };
 
 Messaging.RemoteSource.prototype.unsubscribe =
@@ -230,5 +234,5 @@ Messaging.RemoteSource.prototype.unsubscribe =
 				  "hub.topic": topic,
 				  "hub.verify": verifyModes.join(","),
 				  "hub.verify_token": token},
-				 function (reply) { return k(reply != null); });
+				 function (reply) { return k(reply && reply.isOk()); });
     };
