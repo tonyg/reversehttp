@@ -15,10 +15,10 @@ import net.reversehttp.RequestHandler;
 public class TestNormalHttpService implements RequestHandler {
     public static void main(String[] args) {
         configureLogging();
-        Logger.getLogger(TestReverseHttpService.class.getName()).log(
-                Level.FINE, "Starting");
         try {
             int port = (args.length > 0) ? Integer.parseInt(args[0]) : 8000;
+	    Logger.getLogger(TestReverseHttpService.class.getName()).log
+		(Level.FINE, "Starting on port " + port);
             HttpServer httpd = new NormalHttpServer(port,
                     new TestNormalHttpService());
             httpd.serve();
