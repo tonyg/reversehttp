@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PushbackInputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -55,6 +56,19 @@ public abstract class HttpMessage {
 
     public void setBody(byte[] body) {
         this.body = body;
+    }
+
+    /**
+     * Sets the body to a UTF-8 encoded representation of the parameter. Fails with
+     * a {@link RuntimeException} if UTF-8 encoding is not available (which should
+     * never happen in normal JVMs).
+     */
+    public void setBody(String body) {
+        try {
+            setBody(body.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException uee) {
+            throw new RuntimeException(uee);
+        }
     }
 
     public String toString() {

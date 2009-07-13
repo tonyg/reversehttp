@@ -2,7 +2,6 @@ package net.reversehttp.examples;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.util.Date;
@@ -58,14 +57,8 @@ public class TestReverseHttpService implements RequestHandler,
         req.setResponse(200, "OK");
         req.getResponse()
                 .setHeader("Content-type", "text/plain; charset=utf-8");
-        byte[] b;
-        try {
-            b = ("This is document #" + (counter++) + " served from Java\n")
-                    .getBytes("UTF-8");
-            req.getResponse().setBody(b);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Oh man this sucks", e);
-        }
+        req.getResponse()
+                .setBody("This is document #" + (counter++) + " served from Java\n");
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
