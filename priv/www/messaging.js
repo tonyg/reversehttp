@@ -144,7 +144,7 @@ Messaging.EndpointFacet.prototype.check_token = function (token, path, actualUse
 Messaging.EndpointFacet.prototype.check_http_token =
     function (httpReq, path, params, k, actualUse) {
 	if (this.check_token(params['hub.verify_token'] || "", path, actualUse)) {
-	    k(204);
+	    k(200, params['hub.challenge'] || "");
 	} else {
 	    k(400);
 	}
@@ -200,9 +200,15 @@ Messaging.RemoteEndpoint.prototype.generate_token = function (intended_use, k) {
 };
 
 Messaging.RemoteEndpoint.prototype.check_token = function (token, actual_use, k) {
+    var challenge = new Number(new Date());
     Messaging.HubModeRequest(this.url, "GET", actual_use,
-			     typeof(token) == "string" ? {"hub.verify_token": token} : {},
-			     function (reply) { return k(reply && reply.isOk()); });
+			     typeof(token) == "string" ? {"hub.challenge": challenge,
+							  "hub.verify_token": token} : {},
+			     function (reply) {
+				 alert(uneval({"challenge": challenge,
+					       "body": body}));
+				 return k(reply && reply.isOk() && reply.body == challenge);
+			     });
 };
 
 Messaging.RemoteEndpoint.prototype.deliver = function (topic, body, contentType, k) {
