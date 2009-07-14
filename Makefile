@@ -55,3 +55,5 @@ clean-html:
 
 clean-standalone:
 	rm -rf priv/www/standalone
+
+distclean: clean
