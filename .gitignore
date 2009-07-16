@@ -7,3 +7,4 @@ ebin/reversehttp.app
 .classpath
 .project
 *.class
+priv/java/target
