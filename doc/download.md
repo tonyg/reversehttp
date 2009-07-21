@@ -44,7 +44,7 @@ The ReverseHttp software bundle contains
       ([browse source](http://github.com/tonyg/reversehttp/blob/master/priv/python/reversehttp.py))
 
     - Java
-      ([browse source](http://github.com/tonyg/reversehttp/tree/master/priv/java/net/reversehttp))
+      ([browse source](http://github.com/tonyg/reversehttp/tree/master/priv/java/src/main/java/net/reversehttp))
 
 ## How is it licensed?
 
