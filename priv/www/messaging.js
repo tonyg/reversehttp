@@ -228,7 +228,7 @@ Messaging.RemoteSource.prototype.subscribe =
 	Messaging.HubModeRequest(this.url, "POST", "subscribe",
 				 {"hub.callback": callbackUrl,
 				  "hub.topic": topic,
-				  "hub.verify": verifyModes.join(","),
+				  "hub.verify": verifyModes,
 				  "hub.verify_token": token},
 				 function (reply) { return k(reply && reply.isOk()); });
     };
@@ -238,7 +238,7 @@ Messaging.RemoteSource.prototype.unsubscribe =
 	Messaging.HubModeRequest(this.url, "POST", "unsubscribe",
 				 {"hub.callback": callbackUrl,
 				  "hub.topic": topic,
-				  "hub.verify": verifyModes.join(","),
+				  "hub.verify": verifyModes,
 				  "hub.verify_token": token},
 				 function (reply) { return k(reply && reply.isOk()); });
     };

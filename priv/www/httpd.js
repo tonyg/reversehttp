@@ -66,15 +66,25 @@ Url.prototype.toString = function () {
 
 function parse_qs(qs) {
     var result = {};
+    var multiple = {};
     if (qs) {
 	var keyvals = qs.split('&');
 	for (var i = 0; i < keyvals.length; i++) {
 	    var eqPos = keyvals[i].indexOf('=');
 	    if (eqPos == -1) {
-		result[unescape(keyvals[i])] = true;
+		result[decodeURIComponent(keyvals[i])] = true;
 	    } else {
-		result[unescape(keyvals[i].substr(0, eqPos))] =
-		    unescape(keyvals[i].substr(eqPos + 1));
+		var key = decodeURIComponent(keyvals[i].substr(0, eqPos));
+		var v = decodeURIComponent(keyvals[i].substr(eqPos + 1));
+		if (typeof result[key] === 'undefined') {
+		    result[key] = v;
+		} else {
+		    if (!multiple[key]) {
+			result[key] = [result[key]];
+			multiple[key] = true;
+		    }
+		    result[key].push(v);
+		}
 	    }
 	}
     }
@@ -84,7 +94,14 @@ function parse_qs(qs) {
 function unparse_qs(params) {
     result = [];
     for (var key in params) {
-	result.push(escape(key) + "=" + escape(params[key]));
+	var v = params[key];
+	if (typeof v === 'object' && typeof v.length !== 'undefined') {
+	    for (var i = 0; i < v.length; i++) {
+		result.push(encodeURIComponent(key) + "=" + encodeURIComponent(v[i]));
+	    }
+	} else {
+	    result.push(encodeURIComponent(key) + "=" + encodeURIComponent(v));
+	}
     }
     return result.join("&");
 };
