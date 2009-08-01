@@ -11,6 +11,10 @@ function log() {
     }
 }
 
+function clearLog() {
+    $("#logOutput").empty();
+}
+
 function formatErrorReports(errorReports) {
     var r = [];
     for (var i = 0; i < errorReports.length; i++) {
