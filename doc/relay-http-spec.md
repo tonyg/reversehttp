@@ -138,9 +138,9 @@ number are not valid, the Embedded Pipeline MUST NOT be relayed, a
 status code of 400 MUST be sent in the response to the Envelope
 Request, and processing of the Envelope Request MUST be terminated.
 
-A Relay Endpoint MUST support Embedded Messages, that is, that is,
-Envelope Requests with `Content-Type` of `message/http`. It MAY also
-support Embedded Pipelines proper, with `Content-Type` of
+A Relay Endpoint MUST support Embedded Messages, that is, Envelope
+Requests with `Content-Type` of `message/http`. It MAY also support
+Embedded Pipelines proper, with `Content-Type` of
 `application/http`. If it does not support Pipelines,
 `application/http`, then it MUST reply to any `application/http`
 Envelope Request with a status code of 415, and MUST NOT relay the
