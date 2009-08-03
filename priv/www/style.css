@@ -50,6 +50,7 @@ div#outerContainer {
 
 div#innerContainer {
     padding: 10px;
+    clear: both;
 }
 
 hr {
@@ -64,6 +65,7 @@ ul.mainNav {
 	margin: 0;
 	color: white;
 	background: #154050;
+	width: 100%;
 	border-bottom: 2px solid #6eaa52;
 	border-right: 2px solid #6eaa52;
 }
