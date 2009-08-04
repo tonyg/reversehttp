@@ -140,7 +140,7 @@ function switchAccessPoint(accessPointUrl, installXPConnect) {
     }
 }
 
-function HttpRequest(replyUrl, sourceText) {
+function HttpRequest(replyUrl, sourceText, context) {
     this.replyUrl = replyUrl;
     var tmp = sourceText.match(/([^ ]+) ([^ ]+) HTTP\/([0-9]+\.[0-9]+)\r\n/);
     this.method = tmp[1].toLowerCase();
@@ -148,6 +148,7 @@ function HttpRequest(replyUrl, sourceText) {
     this.httpVersion = tmp[3];
     parseHttpHeadersAndBody(this, sourceText.substring(tmp[0].length));
     this.responseSent = false;
+    this.context = context || {};
 }
 
 // No special action by default.
@@ -419,9 +420,10 @@ HttpServer.prototype.serve = function () {
 	    if (requestSourceText) {
 		try {
 		    var clientHostAndPort = ajaxRequest.getResponseHeader("Requesting-Client");
-		    var httpReq = new HttpRequest($elf.nextReq, requestSourceText);
+		    var httpReq = new HttpRequest($elf.nextReq, requestSourceText,
+						  {requestingClient: clientHostAndPort});
 		    $elf.nextReq = parseLinkHeaders(ajaxRequest.getResponseHeader("Link"))["next"];
-		    $elf.options.log(httpReq.headers["host"] + " " + httpReq.method + " " + httpReq.rawPath);
+		    $elf.options.log(clientHostAndPort + " <- " + httpReq.headers["host"] + " " + httpReq.method + " " + httpReq.rawPath);
 		    try {
 			$elf.callback(httpReq);
 		    } catch (userException) {
