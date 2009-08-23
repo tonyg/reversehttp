@@ -589,7 +589,7 @@ parties.
 
 Tony Garnock-Jones  
 tonyg@lshift.net  
-http://homepages.kcbbs.gen.nz/~tonyg/
+http://homepages.kcbbs.gen.nz/tonyg/
 
 ## Copyright Statement
 
