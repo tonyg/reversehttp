@@ -129,11 +129,13 @@ public abstract class HttpMessage {
                     .get("content-length"));
             body = new byte[contentLength];
             int readCount = 0;
+            int remaining = contentLength;
             while (readCount < contentLength) {
-                int n = s.read(body);
+                int n = s.read(body, readCount, remaining);
                 if (n == -1)
                     return false;
                 readCount += n;
+                remaining -= n;
             }
         }
         return true;
