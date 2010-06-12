@@ -2,7 +2,7 @@ var demoServer = null;
 
 function respondTo(httpReq) {
     var body = $("#replyText").attr("value");
-    httpReq.respond(200, "OK", {}, body);
+    httpReq.respond(200, "OK", {"Content-type": "text/html"}, body);
 }
 
 var demoLabel_keypress_timeout = null;

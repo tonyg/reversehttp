@@ -19,7 +19,8 @@
 	  new HttpServer("tinydemo",
 	                 function (req) {
 			   var c = Number($("#counter").text()) + 1;
-			   req.respond(200, "OK", {}, "Hello, world! This is response #"+ c);
+			   req.respond(200, "OK", {"Content-type": "text/plain"},
+			               "Hello, world! This is response #"+ c);
 			   $("#counter").text(c);
 			 },
 			 {onLocationChanged: function (location) {
