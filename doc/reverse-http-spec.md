@@ -588,13 +588,13 @@ parties.
 ## Author's Address
 
 Tony Garnock-Jones  
-tonyg@lshift.net  
-http://homepages.kcbbs.gen.nz/tonyg/
+tonygarnockjones@gmail.com  
+<http://homepages.kcbbs.gen.nz/tonyg/>
 
 ## Copyright Statement
 
-Copyright &copy; 2009, Tony Garnock-Jones <tonyg@lshift.net>  
-Copyright &copy; 2009, LShift Ltd. <query@lshift.net>
+Copyright &copy; 2009, 2010 Tony Garnock-Jones <tonygarnockjones@gmail.com>  
+Copyright &copy; 2009 LShift Ltd. <query@lshift.net>
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this documentation (the "Documentation"), to deal in the

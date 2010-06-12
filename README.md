@@ -48,7 +48,7 @@ ReverseHttp is [open-source](http://www.opensource.org/) code,
 licensed under the very liberal [MIT
 license](http://www.opensource.org/licenses/mit-license.php):
 
-    Copyright (c) 2008, 2009 Tony Garnock-Jones <tonyg@lshift.net>
+    Copyright (c) 2008, 2009, 2010 Tony Garnock-Jones <tonygarnockjones@gmail.com>
     Copyright (c) 2008, 2009 LShift Ltd. <query@lshift.net>
 
     Permission is hereby granted, free of charge, to any person

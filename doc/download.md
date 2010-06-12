@@ -2,9 +2,8 @@
 
 <a href="http://www.lshift.net/"><img border="0" width="680" src="http://www.lshift.net/images/banner.jpg" alt="LShift Logo"></a>
 
-Development of ReverseHttp is supported by
-[LShift](http://www.lshift.net/). LShift also hosts the main
-ReverseHttp website, <http://www.reversehttp.net/>.
+The original development of ReverseHttp was supported by
+[LShift](http://www.lshift.net/).
 
 ----
 
@@ -51,7 +50,7 @@ The ReverseHttp software bundle contains
 It is [open-source](http://www.opensource.org/) code,
 licensed under the very liberal [MIT license](http://www.opensource.org/licenses/mit-license.php):
 
-    Copyright (c) 2008, 2009 Tony Garnock-Jones <tonyg@lshift.net>
+    Copyright (c) 2008, 2009, 2010 Tony Garnock-Jones <tonygarnockjones@gmail.com>
     Copyright (c) 2008, 2009 LShift Ltd. <query@lshift.net>
 
     Permission is hereby granted, free of charge, to any person
