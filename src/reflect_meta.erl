@@ -43,7 +43,7 @@ reply_with(Req, Title, BodyElts) ->
     reply_with(Req, template(Title, BodyElts)).
 
 reply_with(Req, Html) ->
-    Req:respond({200, [], mochiweb_html:to_html(Html)}).
+    Req:respond({200, [{'Content-type', "text/html"}], mochiweb_html:to_html(Html)}).
 
 all_vhosts() ->
     reflect_vhost_manager:lookup().
