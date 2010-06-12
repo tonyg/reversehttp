@@ -2,7 +2,7 @@
 
 [ReverseHttp](http://github.com/tonyg/reversehttp) is an
 implementation of the [specifications][specs] hosted at
-<http://www.reversehttp.net>:
+<http://reversehttp.net>:
 
  - [ReverseHttp][rev]: a dynamic, ReST-style means of enrolment and
    participation in an HTTP network. The `message/http` and
@@ -71,7 +71,7 @@ license](http://www.opensource.org/licenses/mit-license.php):
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
     DEALINGS IN THE SOFTWARE.
 
-  [rev]: http://www.reversehttp.net/reverse-http-spec.html
-  [relay]: http://www.reversehttp.net/relay-http-spec.html
-  [specs]: http://www.reversehttp.net/specs.html
+  [rev]: http://reversehttp.net/reverse-http-spec.html
+  [relay]: http://reversehttp.net/relay-http-spec.html
+  [specs]: http://reversehttp.net/specs.html
   [RFC 2616]: http://www.w3.org/Protocols/rfc2616/rfc2616.html

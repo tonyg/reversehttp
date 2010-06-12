@@ -83,5 +83,5 @@ for the `Upgrade`-header based protocol.
   [implementation]: download.html
   [SUP]: http://blog.friendfeed.com/2008/08/simple-update-protocol-fetch-updates.html
   [Comet]: http://en.wikipedia.org/wiki/Comet_(programming)
-  [demos]: http://www.reversehttp.net/demos/
+  [demos]: http://reversehttp.net/demos/
   [web hooks]: http://blog.webhooks.org/about
