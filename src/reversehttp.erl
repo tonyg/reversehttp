@@ -6,7 +6,7 @@
 -module(reversehttp).
 -author('author <author@example.com>').
 -export([start/0, stop/0]).
--export([lookup/2, lookup/3, match_access_point/2]).
+-export([lookup/2, lookup/3, host/2, match_access_point/2]).
 
 ensure_started(App) ->
     case application:start(App) of
@@ -46,13 +46,19 @@ lookup(Key, AssocList, DefaultValue) ->
             DefaultValue
     end.
 
+host(Req, Config) ->
+    case lookup(override_host, Config, undefined) of
+        undefined ->
+            case Req:get_header_value(host) of
+                undefined -> lookup(default_host, Config, "localhost");
+                V -> V
+            end;
+        V -> V
+    end.
+
 match_access_point(Req, Config) ->
-    Host = case Req:get_header_value(host) of
-               undefined -> lookup(canonical_host, Config, "localhost");
-               V -> V
-           end,
     match_access_point1(mochiweb_util:urlsplit_path(Req:get(raw_path)),
-                        Host,
+                        host(Req, Config),
                         lookup(access_point_paths, Config, [])).
 
 match_access_point1({Path, _QueryPart, _Fragment}, _Host, []) ->

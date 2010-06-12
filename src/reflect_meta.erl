@@ -4,9 +4,9 @@
 
 -define(RPC_TIMEOUT, 10000).
 
-handle(Req, _Config, AccessUrl, [], _QueryFields) ->
+handle(Req, Config, AccessUrl, [], _QueryFields) ->
     reply_with(Req, "Access Point",
-               gen_info(Req, AccessUrl) ++
+               gen_info(Req, Config, AccessUrl) ++
                [{h2, <<"Registered Delegations">>},
                 {table, [{class, "meta-table"}],
                  [{tr, [], [{th, X} ||
@@ -15,10 +15,10 @@ handle(Req, _Config, AccessUrl, [], _QueryFields) ->
 handle(Req, _Config, _AccessUrl, _PathComponents, _QueryFields) ->
     Req:not_found().
 
-gen_info(Req, AccessUrl) ->
+gen_info(Req, Config, AccessUrl) ->
     [{h2, <<"General Info">>},
      {p, [<<"Access point info: ">>, hlink(AccessUrl)]},
-     {p, [<<"Site root: ">>, hlink("http://" ++ Req:get_header_value(host) ++ "/")]}].
+     {p, [<<"Site root: ">>, hlink("http://" ++ reversehttp:host(Req, Config) ++ "/")]}].
 
 template(Title, BodyElts) ->
     {html, 

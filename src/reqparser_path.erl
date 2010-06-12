@@ -23,5 +23,5 @@ extract_label(Path) ->
             {ok, string:left(Path, N - 1)}
     end.
 
-ext_url(Req, _Config, HostLabel) ->
-    "http://" ++ string:to_lower(Req:get_header_value(host)) ++ "/" ++ HostLabel ++ "/".
+ext_url(Req, Config, HostLabel) ->
+    "http://" ++ string:to_lower(reversehttp:host(Req, Config)) ++ "/" ++ HostLabel ++ "/".
