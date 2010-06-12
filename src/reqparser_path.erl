@@ -9,7 +9,12 @@ analyse(Req, Config) ->
         {normal, Path} ->
             case extract_label(Path) of
                 {ok, HostLabel} ->
-                    {single_request, ext_url(Req, Config, HostLabel)};
+                    case lists:member(HostLabel, reversehttp:lookup(normal_labels, Config, [])) of
+                        true ->
+                            {normal, Path};
+                        false ->
+                            {single_request, ext_url(Req, Config, HostLabel)}
+                    end;
                 {error, no_slash} ->
                     {normal, Path}
             end
