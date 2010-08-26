@@ -45,6 +45,15 @@ The ReverseHttp software bundle contains
     - Java
       ([browse source](http://github.com/tonyg/reversehttp/tree/master/priv/java/src/main/java/net/reversehttp))
 
+## Are other languages supported?
+
+Besides the software in the main downloadable bundle, the following
+libraries have been developed by other contributors:
+
+ - Hookout, Paul Jones's gem for Ruby ([browse
+   source](http://github.com/paulj/hookout), [blog
+   post](http://www.lshift.net/blog/2009/07/21/webhooks-behind-the-firewall-with-reverse-http))
+
 ## How is it licensed?
 
 It is [open-source](http://www.opensource.org/) code,
