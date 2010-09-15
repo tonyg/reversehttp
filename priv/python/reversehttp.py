@@ -29,6 +29,40 @@ class ReverseHttpServer(SocketServer.BaseServer):
         self.reportPollExceptions = False
         self.locationChangeCallback = None
 
+    def handle_request(self):
+        """This code was originally written for python 2.5. In python
+        2.6, BaseServer has been refactored to support timeout,
+        implemented using select, for socket servers. Since here we're
+        abusing the structure of BaseServer to get requests via HTTP,
+        we don't have a file handle we can give to select---or at
+        least, we don't have one *readily available*. Consequently, we
+        override handle_request here to return to the python 2.5
+        behaviour. While this makes the server work again,
+        unfortunately the new timeout and shutdown behaviours
+        available in 2.6 may not work well with this class."""
+        if hasattr(self, '_handle_request_noblock'):
+            ## We're in python 2.6.
+            ## Don't worry, in python 2.6, _handle_request_noblock
+            ## with the definition of get_request below *will* block!
+            return self._handle_request_noblock()
+        else:
+            ## We're in some other python so rely on base behaviour.
+            return SocketServer.BaseServer.handle_request(self)
+
+    def serve_forever(self):
+        """See the comment for handle_request. We override here to
+        return to the python 2.5 behaviour, so that we can shoehorn
+        our weird request-fetching mechanism into the standard httpd
+        classes."""
+        if hasattr(self, '_handle_request_noblock'):
+            ## We're in python 2.6.
+            ## Copy the code from 2.5 verbatim. Ick.
+            while 1:
+                self.handle_request()
+        else:
+            ## We're in some other python so rely on base behaviour.
+            return SocketServer.BaseServer.serve_forever(self)
+
     def get_request(self):
         while 1:
             try:
