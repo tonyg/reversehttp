@@ -54,6 +54,11 @@ libraries have been developed by other contributors:
    source](http://github.com/paulj/hookout), [blog
    post](http://www.lshift.net/blog/2009/07/21/webhooks-behind-the-firewall-with-reverse-http))
 
+ - [Plack-Handler-AnyEvent-ReverseHTTP](https://github.com/miyagawa/Plack-Handler-AnyEvent-ReverseHTTP),
+   by Tatsuhiko Miyagawa: a "Plack handler that runs your PSGI
+   application on AnyEvent::ReverseHTTP", similar to hookout but for
+   Perl.
+
 ## How is it licensed?
 
 It is [open-source](http://www.opensource.org/) code,
