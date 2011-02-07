@@ -32,7 +32,7 @@ from the Web.
 
 ## Building and running ReverseHttp
 
-Run `make`. If this succeeds, run `./start-dev.sh`.
+You will need Erlang installed. Run `make`. If this succeeds, run `./start-dev.sh`.
 
 By default, the server will now be running on port 8000, serving
 content from `priv/www`. Try <http://localhost:8000/>: you should see
