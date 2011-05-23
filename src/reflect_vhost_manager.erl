@@ -1,6 +1,10 @@
 -module(reflect_vhost_manager).
 -behaviour(gen_server).
 
+% When we drop support for Erlang pre R14B, we can remove the
+% definition of max/2 below and remove this no_auto_import pragma.
+-compile({no_auto_import,[max/2]}).
+
 -export([setup_tables/0, start_link/2, lookup/0]).
 -export([request/2, configure/3, poll/4, respond/2]).
 -export([info/1]).
