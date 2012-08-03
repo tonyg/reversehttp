@@ -67,6 +67,13 @@ and has, with Mark Lentczner, produced [an
 Internet-Draft](http://www.ietf.org/internet-drafts/draft-lentczner-rhttp-00.txt)
 for the `Upgrade`-header based protocol.
 
+*Update*: I've only just now (August 2012) discovered [Eric N. Sit's
+SB/MEng thesis from 2000, "Reverse HTTP tunneling for firewall
+traversal"](http://dspace.mit.edu/handle/1721.1/9086). This is the
+earliest presentation of the idea that I'm aware of. I think it's
+pretty neat that Sit was emphasising firewall traversal, which is one
+particular situation where enrolment is really important.
+
 ## Download and links
 
  - Instructions for downloading the implementation are [here][implementation]
