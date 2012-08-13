@@ -91,4 +91,4 @@ particular situation where enrolment is really important.
   [SUP]: http://blog.friendfeed.com/2008/08/simple-update-protocol-fetch-updates.html
   [Comet]: http://en.wikipedia.org/wiki/Comet_(programming)
   [demos]: http://reversehttp.net/demos/
-  [web hooks]: http://blog.webhooks.org/about
+  [web hooks]: http://web.archive.org/web/20101031131824/http://blog.webhooks.org/about/
