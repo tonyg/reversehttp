@@ -1,0 +1,12 @@
+#!/bin/sh
+# This script starts the jekyll renderer and server running on http://localhost:4000/
+cd "$(dirname "$0")"
+cd ..
+
+NONGHCONFIG=configs/_config.yml
+if [ ! -f $NONGHCONFIG ]; then NONGHCONFIG= ; else NONGHCONFIG=,$NONGHCONFIG ; fi
+
+PERHOSTCONFIG=configs/`hostname -s`/_config.yml
+if [ ! -f $PERHOSTCONFIG ]; then PERHOSTCONFIG= ; else PERHOSTCONFIG=,$PERHOSTCONFIG ; fi
+
+jekyll serve --drafts --config _config.yml${NONGHCONFIG}${PERHOSTCONFIG} -P 4000 -H localhost -b / -w

@@ -1,0 +1,102 @@
+---
+layout: default
+---
+# Downloading ReverseHttp
+
+<div class="downloadboxcontainer">
+<div class="downloadbox">
+<a href="https://github.com/tonyg/reversehttp">
+<img src="GitHub-Mark-120px-plus.png">
+code on github
+</a>
+</div>
+<div class="downloadbox">
+<a href="https://github.com/tonyg/reversehttp/zipball/master">
+<img src="zip.png">
+download snapshot
+</a>
+</div>
+</div>
+
+<div class="center downloadtext">
+<pre>git clone git://github.com/tonyg/reversehttp.git</pre>
+</div>
+
+&nbsp;
+
+## What is included?
+
+The ReverseHttp software bundle contains
+
+ - A server written in [Erlang](http://www.erlang.org/) ([browse
+   source](http://github.com/tonyg/reversehttp/blob/master/src/reflect_request_queue.erl))
+   that implements both
+
+   - The [draft ReverseHttp specification][revspec], which lets
+     arbitrary HTTP clients receive and respond to HTTP requests, and
+
+   - The [draft RelayHttp specification][relayspec], which lets
+     Javascript programs issue outbound HTTP requests without running
+     afoul of the usual [cross-site scripting][XSS] attacks.
+
+ - Client libraries for
+
+    - Javascript in the browser
+      ([browse source](http://github.com/tonyg/reversehttp/blob/master/priv/www/httpd.js))
+
+    - Python
+      ([browse source](http://github.com/tonyg/reversehttp/blob/master/priv/python/reversehttp.py))
+
+    - Java
+      ([browse source](http://github.com/tonyg/reversehttp/tree/master/priv/java/src/main/java/net/reversehttp))
+
+## Are other languages supported?
+
+Besides the software in the main downloadable bundle, the following
+libraries have been developed by other contributors:
+
+ - Hookout, Paul Jones's gem for Ruby ([browse
+   source](http://github.com/paulj/hookout), [blog
+   post](http://www.lshift.net/blog/2009/07/21/webhooks-behind-the-firewall-with-reverse-http))
+
+ - [Plack-Handler-AnyEvent-ReverseHTTP](https://github.com/miyagawa/Plack-Handler-AnyEvent-ReverseHTTP),
+   by Tatsuhiko Miyagawa: a "Plack handler that runs your PSGI
+   application on AnyEvent::ReverseHTTP", similar to hookout but for
+   Perl.
+
+## How is it licensed?
+
+<div class="imagecenter"><a href="http://www.lshift.net/"><img border="0" width="221" height="52" src="lshiftLogo50.png" alt="LShift Logo"></a></div>
+
+The original development of ReverseHttp was supported by
+[LShift](http://www.lshift.net/).
+
+It is [open-source](http://www.opensource.org/) code,
+licensed under the very liberal [MIT license](http://www.opensource.org/licenses/mit-license.php):
+
+    Copyright (c) 2008, 2009, 2010 Tony Garnock-Jones <tonygarnockjones@gmail.com>
+    Copyright (c) 2008, 2009 LShift Ltd. <query@lshift.net>
+
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the "Software"), to deal in the Software without
+    restriction, including without limitation the rights to use, copy,
+    modify, merge, publish, distribute, sublicense, and/or sell copies
+    of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+    DEALINGS IN THE SOFTWARE.
+
+  [revspec]: reverse-http-spec.html
+  [relayspec]: relay-http-spec.html
+  [XSS]: http://en.wikipedia.org/wiki/Cross-site_scripting

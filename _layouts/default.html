@@ -1,0 +1,25 @@
+---
+---
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ page.title }} {{ '/ ' + site.title if site.title else '' }}</title>
+  {% include common_html_headers %}
+  <link href='http://fonts.googleapis.com/css?family=Bree+Serif' rel='stylesheet' type='text/css'>
+</head>
+<body>
+  <div id="page" class="default">
+    {% include common_header %}
+    {% include common_nav %}
+    <div class="content">
+      {% if page.cornerpic %}
+      <img class="cornerpic" src="{{ site.baseurl }}{{ page.cornerpic }}">
+      {% endif %}
+      <h1>{{ page.title }}</h1>
+      {{ content }}
+    </div>
+    {% include common_footer %}
+  </div>
+</body>
+
+</html>

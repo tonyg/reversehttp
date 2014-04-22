@@ -1,0 +1,10 @@
+<!-- -*- html -*- -->
+<div class="mainmenu">
+  <ul>
+    <li><a href="{{ site.baseurl }}specs.html">draft specs</a></li>
+    <li><a href="{{ site.baseurl }}download.html">download</a></li>
+  </ul>
+  <a href="{{ site.baseurl }}"><span class="sitetitle">{{ site.title }}</span></a>
+  <div class="clearright"></div>
+</div>
+<div class="clear"></div>
