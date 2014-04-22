@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Relay HTTP Specification
 ---
 # Relay HTTP
 
