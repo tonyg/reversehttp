@@ -595,7 +595,7 @@ parties.
 
 Tony Garnock-Jones  
 tonygarnockjones@gmail.com  
-<http://homepages.kcbbs.gen.nz/tonyg/>
+<http://leastfixedpoint.com/>
 
 ## Copyright Statement
 

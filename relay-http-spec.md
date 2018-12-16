@@ -226,7 +226,7 @@ for controlling such policies are outside the scope of this document.
 
 Tony Garnock-Jones  
 tonygarnockjones@gmail.com  
-<http://homepages.kcbbs.gen.nz/tonyg/>
+<http://leastfixedpoint.com/>
 
 ## Copyright Statement
 
